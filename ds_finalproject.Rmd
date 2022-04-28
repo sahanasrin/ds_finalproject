@@ -6,24 +6,51 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+#loading packages ------------
+library(tidyverse)
+library(dplyr)
+library(tidycensus)
+
 ```
 
-## R Markdown
+```{r}
+#creating dataset ------------
+#census api key
+#Sys.getenv("CENSUS_API_KEY")
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+#census_api_key("db5d1b7c4b6a966c022bf9cd13c266424d6d2c36", install = TRUE)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+#loading in variable list
+v17 <- load_variables(2017, "acs5", cache = TRUE)
 
-```{r cars}
-summary(cars)
+california_2017 <- get_acs(
+  geography = "tract",
+  variables = c("B01003_001", #total population
+                "C17002_001", #income to poverty ratio
+                "B99234_001", #allocation of weeks worked in the past 12 months
+                "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+                "B08133_001", #aggregate travel time to work in minutes
+                "B01001_026", #total female
+                "B28010_001", #computers in household
+                "B99131_001", #allocation of marital status for females
+                "B08303_001", #travel time to work
+                "B99151_002" #allocation of educational attainment
+                ), 
+  output = "wide",
+  state = "CA",
+  year = 2017) # data from years 2013 - 2017
+
+  
+	
+# B01003_001 = total population
+# C17002_001 = income to poverty ratio
+# B992518_001 = allocation of gross rent
+# B99234_001 = allocation of weeks worked in the past 12 months
+# B99233_001 = allocation of usual hours worked per week in the past 12 months 
+
+
+
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
