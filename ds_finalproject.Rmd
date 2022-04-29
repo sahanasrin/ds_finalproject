@@ -11,6 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(dplyr)
 library(tidycensus)
+library(stringr)
 
 ```
 
@@ -22,26 +23,150 @@ library(tidycensus)
 #census_api_key("db5d1b7c4b6a966c022bf9cd13c266424d6d2c36", install = TRUE)
 
 #loading in variable list
-v17 <- load_variables(2017, "acs5", cache = TRUE)
+variables_2017 <- load_variables(2017, "acs5", cache = TRUE)
 
+#California ----------------
 california_2017 <- get_acs(
   geography = "tract",
-  variables = c("B01003_001", #total population
-                "C17002_001", #income to poverty ratio
-                "B99234_001", #allocation of weeks worked in the past 12 months
-                "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-                "B08133_001", #aggregate travel time to work in minutes
-                "B01001_026", #total female
-                "B28010_001", #computers in household
-                "B99131_001", #allocation of marital status for females
-                "B08303_001", #travel time to work
-                "B99151_002" #allocation of educational attainment
+  variables = c(total_pop = "B01003_001", #total population
+                income_pov = "C17002_001", #income to poverty ratio
+                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+                female_count = "B01001_026", #total female
+                computer_count ="B28010_001", #computers in household
+                female_marital_alloc = "B99131_001", #allocation of marital status for females
+                travel_work = "B08303_001", #travel time to work
+                education_alloc = "B99151_002" #allocation of educational attainment
                 ), 
   output = "wide",
   state = "CA",
   year = 2017) # data from years 2013 - 2017
 
-  
+#renaming geoid and name
+california_2017 <- california_2017 %>%
+  rename(geoid = GEOID,
+         name = NAME)
+
+#drop the E estimate columns
+for ( col in 1:ncol(california_2017)){
+    colnames(california_2017)[col] <-  sub("E.*", "", colnames(california_2017)[col])
+}
+
+#Oregon -------------------
+oregon_2017 <- get_acs(
+  geography = "tract",
+  variables = c(total_pop = "B01003_001", #total population
+                income_pov = "C17002_001", #income to poverty ratio
+                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+                female_count = "B01001_026", #total female
+                computer_count ="B28010_001", #computers in household
+                female_marital_alloc = "B99131_001", #allocation of marital status for females
+                travel_work = "B08303_001", #travel time to work
+                education_alloc = "B99151_002" #allocation of educational attainment
+                ), 
+  output = "wide",
+  state = "OR",
+  year = 2017) # data from years 2013 - 2017
+
+#renaming geoid and name
+oregon_2017 <- oregon_2017 %>%
+  rename(geoid = GEOID,
+         name = NAME)
+
+#drop the E estimate columns
+for ( col in 1:ncol(oregon_2017)){
+    colnames(oregon_2017)[col] <-  sub("E.*", "", colnames(oregon_2017)[col])
+}
+
+#Washington State ---------------------
+washington_2017 <- get_acs(
+  geography = "tract",
+  variables = c(total_pop = "B01003_001", #total population
+                income_pov = "C17002_001", #income to poverty ratio
+                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+                female_count = "B01001_026", #total female
+                computer_count ="B28010_001", #computers in household
+                female_marital_alloc = "B99131_001", #allocation of marital status for females
+                travel_work = "B08303_001", #travel time to work
+                education_alloc = "B99151_002" #allocation of educational attainment
+                ), 
+  output = "wide",
+  state = "WA",
+  year = 2017) # data from years 2013 - 2017
+
+#renaming geoid and name
+washington_2017 <- washington_2017 %>%
+  rename(geoid = GEOID,
+         name = NAME)
+
+#drop the E estimate columns
+for ( col in 1:ncol(washington_2017)){
+    colnames(washington_2017)[col] <-  sub("E.*", "", colnames(washington_2017)[col])
+}
+
+#Nevada --------------
+nevada_2017 <- get_acs(
+  geography = "tract",
+  variables = c(total_pop = "B01003_001", #total population
+                income_pov = "C17002_001", #income to poverty ratio
+                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+                female_count = "B01001_026", #total female
+                computer_count ="B28010_001", #computers in household
+                female_marital_alloc = "B99131_001", #allocation of marital status for females
+                travel_work = "B08303_001", #travel time to work
+                education_alloc = "B99151_002" #allocation of educational attainment
+                ), 
+  output = "wide",
+  state = "NV",
+  year = 2017) # data from years 2013 - 2017
+
+#renaming geoid and name
+nevada_2017 <- nevada_2017 %>%
+  rename(geoid = GEOID,
+         name = NAME)
+
+#drop the E estimate columns
+for ( col in 1:ncol(nevada_2017)){
+    colnames(nevada_2017)[col] <-  sub("E.*", "", colnames(nevada_2017)[col])
+}
+
+#Arizona ------------------------
+arizona_2017 <- get_acs(
+  geography = "tract",
+  variables = c(total_pop = "B01003_001", #total population
+                income_pov = "C17002_001", #income to poverty ratio
+                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+                female_count = "B01001_026", #total female
+                computer_count ="B28010_001", #computers in household
+                female_marital_alloc = "B99131_001", #allocation of marital status for females
+                travel_work = "B08303_001", #travel time to work
+                education_alloc = "B99151_002" #allocation of educational attainment
+                ), 
+  output = "wide",
+  state = "AZ",
+  year = 2017) # data from years 2013 - 2017
+
+#renaming geoid and name
+arizona_2017 <- arizona_2017 %>%
+  rename(geoid = GEOID,
+         name = NAME)
+
+#drop the E estimate columns
+for ( col in 1:ncol(arizona_2017)){
+    colnames(arizona_2017)[col] <-  sub("E.*", "", colnames(arizona_2017)[col])
+}
+
+#For variables: E = estimate, M = margin of error
+#aggregate 
 	
 # B01003_001 = total population
 # C17002_001 = income to poverty ratio
@@ -50,7 +175,35 @@ california_2017 <- get_acs(
 # B99233_001 = allocation of usual hours worked per week in the past 12 months 
 
 
+#list of variables ---------------
+
+variable_list = c('total_pop', 
+                  'income_pov', 
+                  'weeks_work_alloc', 
+                  'hours_week_work_alloc', 
+                  'travel_min_work_agg', 
+                  'female_count',
+                  'computer_count', 
+                  'female_marital_alloc', 
+                  'travel_work', 
+                  'education_alloc')
+```
+
+```{r}
+#EDA ---------
+#means of variables for california
+means = colMeans(california_2017[,c(variable_list)])
+barplot(means[order(means,decreasing=T)])
+
+
+  
+
+
 
 ```
+
+
+
+
 
 
