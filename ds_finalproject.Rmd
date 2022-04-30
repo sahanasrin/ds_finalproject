@@ -165,8 +165,10 @@ variable_list = c('total_pop',
                   'education_alloc')
 ```
 
-```{r}
-#EDA ---------
+```{r EDA}
+#EDA --------------------
+
+#CA------------
 #means of variables for california
 means = colMeans(california_2017[,c(variable_list)])
 barplot(means[order(means,decreasing=T)])
@@ -280,5 +282,346 @@ california_2017 %>%
        title = "TBD") +
   geom_smooth(method=lm, se=FALSE)
 
+#AZ------------
+#means of variables for AZ
+means = colMeans(arizona_2017[,c(variable_list)])
+barplot(means[order(means,decreasing=T)])
 
+summary(arizona_2017$travel_work)
+arizona_2017 %>%
+  ggplot(aes(travel_work)) +
+  geom_freqpoly(binwidth = 60) + # 60 seconds = 1 minute
+  labs(x = "Seconds Traveled to Work",
+       y = "Count",
+       title = "Distribtion of Travel Time by Census Tract"
+  )
+
+summary(arizona_2017$computer_count)
+arizona_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(arizona_2017$female_count)
+arizona_2017 %>%
+  ggplot(aes(female_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+#income_pov
+
+arizona_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+arizona_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+arizona_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+arizona_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+arizona_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+arizona_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+arizona_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+arizona_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#NV------------
+
+#means of variables for NV
+means = colMeans(nevada_2017[,c(variable_list)])
+barplot(means[order(means,decreasing=T)])
+
+summary(nevada_2017$travel_work)
+nevada_2017 %>%
+  ggplot(aes(travel_work)) +
+  geom_freqpoly(binwidth = 60) + # 60 seconds = 1 minute
+  labs(x = "Seconds Traveled to Work",
+       y = "Count",
+       title = "Distribtion of Travel Time by Census Tract"
+  )
+
+summary(nevada_2017$computer_count)
+nevada_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(nevada_2017$female_count)
+nevada_2017 %>%
+  ggplot(aes(female_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+#income_pov
+
+nevada_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+nevada_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+nevada_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+nevada_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+nevada_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+nevada_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+nevada_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+nevada_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#OR------------
+#means of variables for OR
+means = colMeans(oregon_2017[,c(variable_list)])
+barplot(means[order(means,decreasing=T)])
+
+summary(oregon_2017$travel_work)
+oregon_2017 %>%
+  ggplot(aes(travel_work)) +
+  geom_freqpoly(binwidth = 60) + # 60 seconds = 1 minute
+  labs(x = "Seconds Traveled to Work",
+       y = "Count",
+       title = "Distribtion of Travel Time by Census Tract"
+  )
+
+summary(oregon_2017$computer_count)
+oregon_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(oregon_2017$female_count)
+oregon_2017 %>%
+  ggplot(aes(female_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+#income_pov
+
+oregon_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+oregon_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+oregon_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+oregon_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Income to Poverty Ratio",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+oregon_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+oregon_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+oregon_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = income_pov))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+oregon_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
 ```
