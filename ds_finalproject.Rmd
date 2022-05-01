@@ -37,8 +37,7 @@ library(usmap)
 library(here)
 library(mapview)
 library(ggthemes)
-library(albersusa)
-
+library(tigris)
 ```
 
 ```{r}
@@ -82,24 +81,70 @@ for ( col in 1:ncol(states_2017)){
 
 ```
 
-## Using the Census API (via a url query) to pull median income - this needs work or we'll omit it
+## Using the Census API (via a url query) to pull median income and some mapping exploration
 ```{r}
-censusUrl <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B06011_001E,B06011_001M,geometry&for=state:*")
+#using census API Query to get data on median household income levels in 50 states
+#i'm not really using this anywhere yet 
+url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B06011_001E&for=state:*")
+popurl <- GET(url = url)
+http_status(popurl)
+popurl <- content(popurl, as = "text")
+pop_matrix <- fromJSON(popurl)
+#turn body of character matrix into a tibble
+us_50_states <- as_tibble(pop_matrix[2:nrow(pop_matrix),],.name_repair = "minimal")
+#add variable names to the tibble
+names(us_50_states) <- us_50_states[1,]
 
-#requesting census API
-acsJson <- GET(url = censusUrl)
+#this is just me trying to create example maps using a different type of package
+ca_example_map <- get_acs(
+  geography = "tract",
+  variables = c(total_pop = "B01003_001", #total population
+                #income_pov = "C17002_001", #income to poverty ratio
+                #weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+                #hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+                #travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+                #female_count = "B01001_026", #total female
+                #computer_count ="B28010_001", #computers in household
+                #female_marital_alloc = "B99131_001", #allocation of marital status for females
+                #travel_work = "B08303_001", #travel time to work
+                #education_alloc = "B99151_001", #allocation of educational attainment (number of people who have completed HS)
+                med_income = "B06011_001" #median income level (this is our outcome variable)
+                ), 
+  output = "wide",
+  state = states,
+  year = 2017) # data from years 2013 - 2017
 
-#convert the request to text
-acsJsonTxt <- content(acsJson, as = "text")
+us_map <- get_acs(
+  geography = "state", 
+  variables = c(total_pop = "B01003_001", 
+                med_income = "B06011_001"), 
+  output = "wide", 
+  state = states, 
+  geometry = TRUE, 
+  year = 2017) 
 
-#convert from text to character matrix
-acsJsonMatrix <- fromJSON(acsJsonTxt)
+plot(us_map["med_incomeE"])
+       
+plot(ca_example_map["med_incomeE"])
+library(mapview)
 
-#separate the data from the headers (creating a tibble for the non-header data)
-acsData2Temp <- as_tibble(acsJsonMatrix[2:nrow(acsJsonMatrix), ], .name_repair = "minimal")
+#this is an interactive map
+mapview(us_map, zcol = "med_incomeE")
 
-#add headers back to the data frame:
-names(acsData2Temp) <- acsJsonMatrix[1, ]
+# #requesting census API
+# acsJson <- GET(url = censusUrl)
+# 
+# #convert the request to text
+# acsJsonTxt <- content(acsJson, as = "text")
+# 
+# #convert from text to character matrix
+# acsJsonMatrix <- fromJSON(acsJsonTxt)
+# 
+# #separate the data from the headers (creating a tibble for the non-header data)
+# acsData2Temp <- as_tibble(acsJsonMatrix[2:nrow(acsJsonMatrix), ], .name_repair = "minimal")
+# 
+# #add headers back to the data frame:
+# names(acsData2Temp) <- acsJsonMatrix[1, ]
 
 ```
 
@@ -938,7 +983,6 @@ rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate =
 
 ```
 
-
 ## geospatial work beginnings
 Advanced data visualization (e.g., interactive visualization)
 ```{r}
@@ -981,6 +1025,20 @@ usa_sf() %>%
 
 #map idea 3 - This may get messy but on the surface it's cool
 mapview(geoCensusStates)
+
+#map idea 4 
+library(maps)
+us_states <- map_data("state")
+head(us_states)
+
+p <- ggplot(data = us_states,
+            mapping = aes(x = long, y = lat,
+                          group = group))
+
+p + geom_polygon(fill = "white", color = "black")
+
+library(tigris)
+plot(us_
 
 ```
 
