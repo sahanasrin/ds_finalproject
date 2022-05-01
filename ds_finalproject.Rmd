@@ -1,15 +1,44 @@
+---
 title: "Final Project"
-author: 
+author: "Sahana Srinivasan, Jake Kochmansky, Jae Gnazzo, Nathaniel Spilka"
 output: html_document
 ---
 
+# _________________________________________________
+
+# PPOL 670 | Final Project
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+#clear up workspace
+rm(list = ls(all.names = TRUE))
+graphics.off()
+cat("\014")
+
 #loading packages ------------
-library(tidyverse)
-library(dplyr)
 library(tidycensus)
+library(tidyverse)
+library(tidymodels)
+library(parsnip)
+library(recipes)
+library(ranger)
+library(yardstick)
+library(vip)
 library(stringr)
+library(sf)
+library(tigris)
+library(janitor)
+library(censusapi)
+library(jsonlite)
+library(httr)
+library(usmap)
+library(here)
+library(mapview)
+library(ggthemes)
+library(albersusa)
+
 ```
 
 ```{r}
@@ -18,132 +47,203 @@ library(stringr)
 #Sys.getenv("CENSUS_API_KEY")
 #census_api_key("db5d1b7c4b6a966c022bf9cd13c266424d6d2c36", install = TRUE)
 #loading in variable list
+
+states = c("CA", "OR", "WA", "NV", "AZ", "CO", "ID", "MT", "WY", "NM", "AK", "HI","UT",
+           "ND", "SD", "NE", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "MI", "OH",
+           "OK", "TX", "LA", "AR", "MS", "AL", "GA", "FL", "TN", "KY", "WV", "VA", "NC", "SC", "DE","MD",
+           "ME", "NH", "VT", "MA", "CT", "RI", "NJ", "PA", "NY")
 variables_2017 <- load_variables(2017, "acs5", cache = TRUE)
-#California ----------------
-california_2017 <- get_acs(
+#All Relevant States ----------------
+states_2017 <- get_acs(
   geography = "tract",
   variables = c(total_pop = "B01003_001", #total population
-                income_pov = "C17002_001", #income to poverty ratio
-                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+                #income_pov = "C17002_001", #income to poverty ratio
+                #weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+                #hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
                 female_count = "B01001_026", #total female
                 computer_count ="B28010_001", #computers in household
-                female_marital_alloc = "B99131_001", #allocation of marital status for females
+                #female_marital_alloc = "B99131_001", #allocation of marital status for females
                 travel_work = "B08303_001", #travel time to work
-                education_alloc = "B99151_002" #allocation of educational attainment
+                education_alloc = "B99151_001", #allocation of educational attainment (number of people who have completed HS)
+                med_income = "B06011_001" #median income level (this is our outcome variable)
                 ), 
   output = "wide",
-  state = "CA",
+  state = states,
   year = 2017) # data from years 2013 - 2017
 #renaming geoid and name
-california_2017 <- california_2017 %>%
+states_2017 <- states_2017 %>%
   rename(geoid = GEOID,
          name = NAME)
 #drop the E estimate columns
-for ( col in 1:ncol(california_2017)){
-    colnames(california_2017)[col] <-  sub("E.*", "", colnames(california_2017)[col])
+for ( col in 1:ncol(states_2017)){
+    colnames(states_2017)[col] <-  sub("E.*", "", colnames(states_2017)[col])
 }
-#Oregon -------------------
-oregon_2017 <- get_acs(
-  geography = "tract",
-  variables = c(total_pop = "B01003_001", #total population
-                income_pov = "C17002_001", #income to poverty ratio
-                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-                female_count = "B01001_026", #total female
-                computer_count ="B28010_001", #computers in household
-                female_marital_alloc = "B99131_001", #allocation of marital status for females
-                travel_work = "B08303_001", #travel time to work
-                education_alloc = "B99151_002" #allocation of educational attainment
-                ), 
-  output = "wide",
-  state = "OR",
-  year = 2017) # data from years 2013 - 2017
-#renaming geoid and name
-oregon_2017 <- oregon_2017 %>%
-  rename(geoid = GEOID,
-         name = NAME)
-#drop the E estimate columns
-for ( col in 1:ncol(oregon_2017)){
-    colnames(oregon_2017)[col] <-  sub("E.*", "", colnames(oregon_2017)[col])
-}
-#Washington State ---------------------
-washington_2017 <- get_acs(
-  geography = "tract",
-  variables = c(total_pop = "B01003_001", #total population
-                income_pov = "C17002_001", #income to poverty ratio
-                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-                female_count = "B01001_026", #total female
-                computer_count ="B28010_001", #computers in household
-                female_marital_alloc = "B99131_001", #allocation of marital status for females
-                travel_work = "B08303_001", #travel time to work
-                education_alloc = "B99151_002" #allocation of educational attainment
-                ), 
-  output = "wide",
-  state = "WA",
-  year = 2017) # data from years 2013 - 2017
-#renaming geoid and name
-washington_2017 <- washington_2017 %>%
-  rename(geoid = GEOID,
-         name = NAME)
-#drop the E estimate columns
-for ( col in 1:ncol(washington_2017)){
-    colnames(washington_2017)[col] <-  sub("E.*", "", colnames(washington_2017)[col])
-}
-#Nevada --------------
-nevada_2017 <- get_acs(
-  geography = "tract",
-  variables = c(total_pop = "B01003_001", #total population
-                income_pov = "C17002_001", #income to poverty ratio
-                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-                female_count = "B01001_026", #total female
-                computer_count ="B28010_001", #computers in household
-                female_marital_alloc = "B99131_001", #allocation of marital status for females
-                travel_work = "B08303_001", #travel time to work
-                education_alloc = "B99151_002" #allocation of educational attainment
-                ), 
-  output = "wide",
-  state = "NV",
-  year = 2017) # data from years 2013 - 2017
-#renaming geoid and name
-nevada_2017 <- nevada_2017 %>%
-  rename(geoid = GEOID,
-         name = NAME)
-#drop the E estimate columns
-for ( col in 1:ncol(nevada_2017)){
-    colnames(nevada_2017)[col] <-  sub("E.*", "", colnames(nevada_2017)[col])
-}
-#Arizona ------------------------
-arizona_2017 <- get_acs(
-  geography = "tract",
-  variables = c(total_pop = "B01003_001", #total population
-                income_pov = "C17002_001", #income to poverty ratio
-                weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-                hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-                travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-                female_count = "B01001_026", #total female
-                computer_count ="B28010_001", #computers in household
-                female_marital_alloc = "B99131_001", #allocation of marital status for females
-                travel_work = "B08303_001", #travel time to work
-                education_alloc = "B99151_002" #allocation of educational attainment
-                ), 
-  output = "wide",
-  state = "AZ",
-  year = 2017) # data from years 2013 - 2017
-#renaming geoid and name
-arizona_2017 <- arizona_2017 %>%
-  rename(geoid = GEOID,
-         name = NAME)
-#drop the E estimate columns
-for ( col in 1:ncol(arizona_2017)){
-    colnames(arizona_2017)[col] <-  sub("E.*", "", colnames(arizona_2017)[col])
-}
+
+```
+
+## Using the Census API (via a url query) to pull median income - this needs work or we'll omit it
+```{r}
+censusUrl <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B06011_001E,B06011_001M,geometry&for=state:*")
+
+#requesting census API
+acsJson <- GET(url = censusUrl)
+
+#convert the request to text
+acsJsonTxt <- content(acsJson, as = "text")
+
+#convert from text to character matrix
+acsJsonMatrix <- fromJSON(acsJsonTxt)
+
+#separate the data from the headers (creating a tibble for the non-header data)
+acsData2Temp <- as_tibble(acsJsonMatrix[2:nrow(acsJsonMatrix), ], .name_repair = "minimal")
+
+#add headers back to the data frame:
+names(acsData2Temp) <- acsJsonMatrix[1, ]
+
+```
+
+## the place where we'll clean data
+```{r - cleaning data}
+
+states_2017 <- na.omit(states_2017)
+only_numb <- states_2017 %>%
+  select(-geoid, -name)
+
+```
+
+## specific state queries using get_acs
+```{r - states}
+# 
+# #California ----------------
+# california_2017 <- get_acs(
+#   geography = "tract",
+#   variables = c(total_pop = "B01003_001", #total population
+#                 income_pov = "C17002_001", #income to poverty ratio
+#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+#                 female_count = "B01001_026", #total female
+#                 computer_count ="B28010_001", #computers in household
+#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
+#                 travel_work = "B08303_001", #travel time to work
+#                 education_alloc = "B99151_002", #allocation of educational attainment
+#                 ), 
+#   output = "wide",
+#   state = "CA",
+#   year = 2017) # data from years 2013 - 2017
+# #renaming geoid and name
+# california_2017 <- california_2017 %>%
+#   rename(geoid = GEOID,
+#          name = NAME)
+# #drop the E estimate columns
+# for ( col in 1:ncol(california_2017)){
+#     colnames(california_2017)[col] <-  sub("E.*", "", colnames(california_2017)[col])
+# }
+# #Oregon -------------------
+# oregon_2017 <- get_acs(
+#   geography = "tract",
+#   variables = c(total_pop = "B01003_001", #total population
+#                 income_pov = "C17002_001", #income to poverty ratio
+#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+#                 female_count = "B01001_026", #total female
+#                 computer_count ="B28010_001", #computers in household
+#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
+#                 travel_work = "B08303_001", #travel time to work
+#                 education_alloc = "B99151_002" #allocation of educational attainment
+#                 ), 
+#   output = "wide",
+#   state = "OR",
+#   year = 2017) # data from years 2013 - 2017
+# #renaming geoid and name
+# oregon_2017 <- oregon_2017 %>%
+#   rename(geoid = GEOID,
+#          name = NAME)
+# #drop the E estimate columns
+# for ( col in 1:ncol(oregon_2017)){
+#     colnames(oregon_2017)[col] <-  sub("E.*", "", colnames(oregon_2017)[col])
+# }
+# #Washington State ---------------------
+# washington_2017 <- get_acs(
+#   geography = "tract",
+#   variables = c(total_pop = "B01003_001", #total population
+#                 income_pov = "C17002_001", #income to poverty ratio
+#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+#                 female_count = "B01001_026", #total female
+#                 computer_count ="B28010_001", #computers in household
+#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
+#                 travel_work = "B08303_001", #travel time to work
+#                 education_alloc = "B99151_002" #allocation of educational attainment
+#                 ), 
+#   output = "wide",
+#   state = "WA",
+#   year = 2017) # data from years 2013 - 2017
+# #renaming geoid and name
+# washington_2017 <- washington_2017 %>%
+#   rename(geoid = GEOID,
+#          name = NAME)
+# #drop the E estimate columns
+# for ( col in 1:ncol(washington_2017)){
+#     colnames(washington_2017)[col] <-  sub("E.*", "", colnames(washington_2017)[col])
+# }
+# #Nevada --------------
+# nevada_2017 <- get_acs(
+#   geography = "tract",
+#   variables = c(total_pop = "B01003_001", #total population
+#                 income_pov = "C17002_001", #income to poverty ratio
+#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+#                 female_count = "B01001_026", #total female
+#                 computer_count ="B28010_001", #computers in household
+#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
+#                 travel_work = "B08303_001", #travel time to work
+#                 education_alloc = "B99151_002" #allocation of educational attainment
+#                 ), 
+#   output = "wide",
+#   state = "NV",
+#   year = 2017) # data from years 2013 - 2017
+# #renaming geoid and name
+# nevada_2017 <- nevada_2017 %>%
+#   rename(geoid = GEOID,
+#          name = NAME)
+# #drop the E estimate columns
+# for ( col in 1:ncol(nevada_2017)){
+#     colnames(nevada_2017)[col] <-  sub("E.*", "", colnames(nevada_2017)[col])
+# }
+# #Arizona ------------------------
+# arizona_2017 <- get_acs(
+#   geography = "tract",
+#   variables = c(total_pop = "B01003_001", #total population
+#                 income_pov = "C17002_001", #income to poverty ratio
+#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+#                 female_count = "B01001_026", #total female
+#                 computer_count ="B28010_001", #computers in household
+#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
+#                 travel_work = "B08303_001", #travel time to work
+#                 education_alloc = "B99151_002" #allocation of educational attainment
+#                 ), 
+#   output = "wide",
+#   state = "AZ",
+#   year = 2017) # data from years 2013 - 2017
+# #renaming geoid and name
+# arizona_2017 <- arizona_2017 %>%
+#   rename(geoid = GEOID,
+#          name = NAME)
+# #drop the E estimate columns
+# for ( col in 1:ncol(arizona_2017)){
+#     colnames(arizona_2017)[col] <-  sub("E.*", "", colnames(arizona_2017)[col])
+# }
+
+```
+
+```{r - variables}
 #For variables: E = estimate, M = margin of error
 #aggregate 
 	
@@ -625,3 +725,273 @@ oregon_2017 %>%
        title = "TBD") +
   geom_smooth(method=lm, se=FALSE)
 ```
+
+
+## splitting the data, creating folds, and creating a recipe (that will need to get updated depending on variables used)
+```{r - Splitting and folding and creating a recipe}
+#Set up a testing environment
+#set the seed and split the data
+set.seed(20211101)
+states_2017_split <- initial_split(only_numb, prop = .8)
+states_2017_train <- training(states_2017_split)
+states_2017_test <- testing(states_2017_split)
+
+#resampling with 10 folds
+folds <- vfold_cv(data = states_2017_train, v = 10)
+
+#what other steps would be good to include here? *** UPDATE ACORDING TO THE VARIABLES USED
+states_2017_rec <- recipe(med_income ~ ., data = states_2017_train) %>%
+  step_naomit(all_predictors()) %>%
+  step_nzv(all_predictors()) %>%
+  step_filter_missing(all_predictors()) %>%
+  #step_center() %>%
+  #step_normalize() %>%
+  step_log() 
+# 
+# %>%
+#   prep(training = states_2017_train) 
+# 
+# temp <- bake(states_2017_rec, new_data = NULL)
+
+```
+
+## linear regression model *infrastructure*
+```{r - linear regression model}
+#setting the linear reg model
+lm_mod <- linear_reg() %>%
+  set_engine(engine = "lm") %>%
+  set_mode(mode = "regression")
+
+#workflow - (we dont use prep when we run the recipe here)
+lm_wf <- workflow() %>%
+  add_recipe(recipe = states_2017_rec) %>%
+  add_model(spec = lm_mod)
+
+#resampling using the 10-v-fold process specified above
+lm_cv <- lm_wf %>%
+  fit_resamples(resamples = folds)
+
+#using RMSE to choose the best model
+lm_best <- lm_cv %>%
+  select_best("rmse")
+
+#finalize the workflow using the established workflow and the best model (according to RMSE)
+lm_final <- lm_wf %>%
+  finalize_workflow(parameters = lm_best)
+
+#fitting the workflow with the original data
+lm_fit <- lm_final %>%
+  fit(states_2017_train)
+
+
+#RMSE looks consistent across folds
+collect_metrics(lm_cv, summarize = FALSE) %>%
+  filter(.metric == "rmse") %>%
+  ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
+  geom_line() +
+  geom_point() +
+  geom_label(hjust = .1, nudge_y = -.1) +
+  scale_y_continuous(limits = c(0, .3)) +
+  labs(title = "Chicago “L” Train Ridership: Linear Regression Model (RMSE Across 10 Folds)", 
+       y = "Predicted RMSE",
+       x = "Fold Number") +
+  theme_minimal()
+
+#mean RMSE across the 10 samples
+collect_metrics(lm_cv) %>%
+  filter(.metric == "rmse") %>%
+  select(mean) %>%
+  pull(mean)
+
+```
+
+## K nearest neighbors model *infrastructure* 
+```{r - Exercise 02: knn model}
+knn_mod <- nearest_neighbor(neighbors = 5) %>%
+  set_engine(engine = "kknn") %>%
+  set_mode(mode = "regression")
+
+#workflow situation
+knn_workflow <- workflow() %>%
+  add_model(spec = knn_mod) %>%
+  add_recipe(recipe = states_2017_rec)
+
+#creating a tuning grid
+#knn_grid <- tibble(neighbors = seq(from = 15, to = 27, by = 2))
+
+
+#resampling using the 10-v-fold process specified above
+knn_res <- knn_workflow %>%
+  fit_resamples(resamples = folds)
+
+#using RMSE to choose the best model
+knn_best <- knn_res %>%
+  select_best("rmse")
+
+#finalize the workflow using the established workflow and the best model (according to RMSE)
+knn_final <- knn_workflow %>%
+  finalize_workflow(parameters = knn_best)
+
+#fitting the workflow with the original data
+knn_fit <- knn_final %>%
+  fit(states_2017_train)
+
+#applying the updated workflow to the fit across folds
+knn_fit_rs <- knn_final %>%
+  fit_resamples(resamples = folds)
+
+#RMSE looks consistent across folds
+collect_metrics(knn_res, summarize = FALSE) %>%
+  filter(.metric == "rmse") %>%
+  ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(limits = c(0, 5)) +
+  geom_label(hjust = .5, nudge_y = -.3) +
+  labs(title = "Chicago “L” Train Ridership: KNN Model (RMSE Across 10 Folds)", 
+       y = "Predicted RMSE",
+       x = "Fold Number") +
+  theme_minimal()
+
+#mean RMSE across the 10 samples
+collect_metrics(knn_res) %>%
+  filter(.metric == "rmse") %>%
+  select(mean) %>%
+  pull(mean)
+
+```
+
+
+
+## Random forest model *infrastructure*
+```{r - Exercise 02: random forest model}
+treeNumb <- 1000
+gridVal <- 10
+#since random forests can be computationally heavier, we use parallel processing
+cores <- parallel::detectCores()
+
+#random forest with 1000 iterations while utilizing the parallel processing (num.threads = cores)
+rf_mod1 <- rand_forest(mtry = tune(), min_n = tune(), trees = treeNumb) %>% 
+  set_engine(engine = "ranger", num.threads = cores, importance = "impurity") %>%
+  set_mode("regression")
+
+#initiating the workflow for random forests
+rf_workflow1 <- workflow() %>% 
+  add_recipe(recipe = states_2017_rec) %>%
+  add_model(spec = rf_mod1)
+
+#tune with the given number of folds and grid-value
+rf_res <- rf_workflow1 %>% 
+  tune_grid(resamples = folds, grid = gridVal,
+            control = control_grid(save_pred = TRUE))
+
+#these are the best hyperparameters (mtry = , min_n = )
+rf_best <- rf_res %>% 
+  select_best(metric = "rmse")
+
+#applying the best hyperparameters to our original workflow (since we used tune() as "place holders" for mtry and min_n)
+rf_final <- rf_workflow1 %>%
+  finalize_workflow(parameters = rf_best)
+
+#apply the worlflow when fitting the data
+rf_last_fit <- rf_final %>%
+   last_fit(states_2017_split)
+
+#fitting the workflow with the original data
+rf_final_fit <- fit(rf_final, only_numb)
+
+#applying the updated workflow to the fit
+rf_fit_rs <- rf_final %>%
+  fit_resamples(resamples = folds)
+
+#RMSE looks consistent across folds
+collect_metrics(rf_fit_rs, summarize = FALSE) %>%
+  filter(.metric == "rmse") %>%
+  ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
+  geom_line() +
+  geom_point() +
+  geom_label(hjust = .5, nudge_y = -.2) +
+  scale_y_continuous(limits = c(0, 4)) +
+  labs(title = "Chicago “L” Train Ridership: Random Forest Model (RMSE Across 10 Folds)", 
+       y = "Predicted RMSE",
+       x = "Fold Number") +
+  theme_minimal()
+
+#mean RMSE across the 10 samples
+collect_metrics(rf_fit_rs) %>%
+  filter(.metric == "rmse") %>%
+  select(mean) %>%
+  pull(mean)
+
+```
+
+## Prediction *infrastructure*
+```{r - prediction for linear regression}
+#making a prediction
+predictions_testing <- bind_cols(states_2017_test,
+    predict(object = lm_fit, new_data = states_2017_test)
+  )
+
+#rmse for test data
+rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate = .pred)
+
+
+```
+
+
+## geospatial work beginnings
+Advanced data visualization (e.g., interactive visualization)
+```{r}
+#a more replicable way to download the data - make sure you have a "data" folder in your "ds_finalproject" folder
+dataFile <- here("data", "states.zip")
+dataFolder <- here("data")
+download.file("https://www2.census.gov/geo/tiger/GENZ2017/shp/cb_2017_us_state_500k.zip", destfile = dataFile)
+unzip(dataFile, exdir = dataFolder)
+
+#loading in census states shape file
+geoCensusStates <- st_read("data/cb_2017_us_state_500k.shp") %>%
+  clean_names()
+
+#setting the CRS
+# censusStateShaFile <- geoCensusStates %>%
+#   select(geoid, geometry) %>%
+#   st_set_crs(value = 4326)
+
+#combining the Census shapefile witht he median household income by state
+#HERE WE'LL NEED TO HAVE CREATED A A DATAFRAME WITH THE MEDIAN INCOME AND PREDICTED MEDIAN INCOME FOR EACH STATE
+#censusGeoData <- st_join(censusStateShaFile, , join = st_intersects)
+
+#setting the crs and creating the geometry variable
+# censusStateShaFile <- geoCensusStates %>%
+#   st_as_sf(coords = c("longitude", "latitude"), na.fail = FALSE) %>%
+#   st_set_crs(value = 4326)
+
+#Map idea 1 - this may allow for more changes down the line
+geoCensusStates %>% 
+  ggplot() +
+  geom_sf() +
+  coord_sf(crs = 5070, datum = NA) +
+  theme_map()
+
+#Map idea 2 - this is the cleanest so far but it doesn't use the census 
+usa_sf() %>% 
+  ggplot() +
+  geom_sf() +
+  theme_map()
+
+#map idea 3 - This may get messy but on the surface it's cool
+mapview(geoCensusStates)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
