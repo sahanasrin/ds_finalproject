@@ -51,6 +51,7 @@ states = c("CA", "OR", "WA", "NV", "AZ", "CO", "ID", "MT", "WY", "NM", "AK", "HI
            "ND", "SD", "NE", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "MI", "OH",
            "OK", "TX", "LA", "AR", "MS", "AL", "GA", "FL", "TN", "KY", "WV", "VA", "NC", "SC", "DE","MD",
            "ME", "NH", "VT", "MA", "CT", "RI", "NJ", "PA", "NY")
+
 variables_2017 <- load_variables(2017, "acs5", cache = TRUE)
 #All Relevant States ----------------
 states_2017 <- get_acs(
@@ -65,11 +66,16 @@ states_2017 <- get_acs(
                 #female_marital_alloc = "B99131_001", #allocation of marital status for females
                 travel_work = "B08303_001", #travel time to work
                 education_alloc = "B99151_001", #allocation of educational attainment (number of people who have completed HS)
-                med_income = "B06011_001" #median income level (this is our outcome variable)
+                med_income = "B19013_001", #median income level in last 12 months (this is our outcome variable)
+                hs_count = "B15003_017", #number of people with a HS diploma
+                ged_count = "B15003_018", #number of people with a ged
+                assoc_count = "B15003_021", #number of people with an associates degree
+                bach_count= "B15003_022" #number of people with bachelor's degree
                 ), 
   output = "wide",
   state = states,
   year = 2017) # data from years 2013 - 2017
+
 #renaming geoid and name
 states_2017 <- states_2017 %>%
   rename(geoid = GEOID,
@@ -79,6 +85,8 @@ for ( col in 1:ncol(states_2017)){
     colnames(states_2017)[col] <-  sub("E.*", "", colnames(states_2017)[col])
 }
 
+#childhood opportunity data -------------
+child_opp <- GET("https://data.diversitydatakids.org/api/3/action/datastore_create")
 ```
 
 ## Using the Census API (via a url query) to pull median income and some mapping exploration
@@ -154,6 +162,22 @@ mapview(us_map, zcol = "med_incomeE")
 states_2017 <- na.omit(states_2017)
 only_numb <- states_2017 %>%
   select(-geoid, -name)
+
+#making all variables log
+states_2017 <- states_2017 %>%
+  mutate(
+    log_total_pop = log(total_pop),
+    log_travel_min_work_agg = log(travel_min_work_agg),
+    log_female_count = log(female_count),
+    log_computer_count = log(computer_count),
+    log_travel_work = log(travel_work),
+    log_education_alloc = log(education_alloc),
+    log_med_income = log(med_income),
+    log_hs_count = log(hs_count),
+    log_ged_count = log(ged_count),
+    log_assoc_count = log(assoc_count),
+    log_bach_count = log(bach_count)
+    )
 
 ```
 
@@ -299,23 +323,146 @@ only_numb <- states_2017 %>%
 # B99233_001 = allocation of usual hours worked per week in the past 12 months 
 #list of variables ---------------
 variable_list = c('total_pop', 
-                  'income_pov', 
-                  'weeks_work_alloc', 
-                  'hours_week_work_alloc', 
+                  #'income_pov', 
+                  #'weeks_work_alloc', 
+                  #'hours_week_work_alloc', 
                   'travel_min_work_agg', 
                   'female_count',
                   'computer_count', 
-                  'female_marital_alloc', 
+                  #'female_marital_alloc', 
                   'travel_work', 
-                  'education_alloc')
+                  'education_alloc',
+                  'hs_count',
+                  'ged_count',
+                  'assoc_count',
+                  'bach_count')
 ```
 
 ```{r EDA}
-#EDA --------------------
+#EDA for all states--------------------
 
+#all states -------------
+#means of variables for all states
+means = colMeans(states_2017[,c(variable_list)])
+barplot(means[order(means,decreasing=T)])
+
+summary(states_2017$travel_work)
+
+travel_to_work <- states_2017 %>%
+  ggplot(aes(travel_work)) +
+  geom_freqpoly(binwidth = 60) + # 60 seconds = 1 minute
+  labs(x = "Seconds Traveled to Work",
+       y = "Count",
+       title = "Distribtion of Travel Time by Census Tract"
+  )
+
+summary(states_2017$computer_count)
+
+states_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(states_2017$female_count)
+states_2017 %>%
+  ggplot(aes(female_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+#income_pov
+
+# states_2017 %>%
+#   ggplot(aes(
+#       x = travel_work,
+#       y = income_pov))+
+#   geom_point() +
+#   labs(x = "Seconds Traveled to Work",
+#        y = "Income to Poverty Ratio",
+#        title = "TBD") +
+#   geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+# states_2017 %>%
+#   ggplot(aes(
+#       x = travel_work,
+#       y = income_pov))+
+#   geom_point() +
+#   labs(x = "Seconds Traveled to Work",
+#        y = "Income to Poverty Ratio",
+#        title = "TBD") +
+#   geom_smooth(method=lm, se=FALSE)
+
+# states_2017 %>%
+#   ggplot(aes(
+#       x = travel_work,
+#       y = income_pov))+
+#   geom_point() +
+#   labs(x = "Seconds Traveled to Work",
+#        y = "Income to Poverty Ratio",
+#        title = "TBD") +
+#   geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+# states_2017 %>%
+#   ggplot(aes(
+#       x = female_count,
+#       y = income_pov))+
+#   geom_point() +
+#   labs(x = "",
+#        y = "",
+#        title = "TBD") +
+#   geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+```
+```{r EDA}
+#EDA for select states
 #CA------------
 #means of variables for california
-means = colMeans(california_2017[,c(variable_list)])
+means = colMeans(states_2017[,c(variable_list)])
 barplot(means[order(means,decreasing=T)])
 
 summary(california_2017$travel_work)
@@ -770,7 +917,6 @@ oregon_2017 %>%
        title = "TBD") +
   geom_smooth(method=lm, se=FALSE)
 ```
-
 
 ## splitting the data, creating folds, and creating a recipe (that will need to get updated depending on variables used)
 ```{r - Splitting and folding and creating a recipe}
