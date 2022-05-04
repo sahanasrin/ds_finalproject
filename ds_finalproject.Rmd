@@ -28,7 +28,6 @@ library(yardstick)
 library(vip)
 library(stringr)
 library(sf)
-library(tigris)
 library(janitor)
 library(censusapi)
 library(jsonlite)
@@ -38,6 +37,9 @@ library(here)
 library(mapview)
 library(ggthemes)
 library(tigris)
+library(albersusa)
+library(ggiraph)
+
 ```
 
 ```{r}
@@ -83,10 +85,24 @@ states_2017 <- states_2017 %>%
 #drop the E estimate columns
 for ( col in 1:ncol(states_2017)){
     colnames(states_2017)[col] <-  sub("E.*", "", colnames(states_2017)[col])
-}
 
-#childhood opportunity data -------------
-child_opp <- GET("https://data.diversitydatakids.org/api/3/action/datastore_create")
+    }
+
+```
+
+```{r}
+# reading in childhood opportunity data -------------
+child_opp_data1 <- read_csv("~/Desktop/GU_3Spring2022/DataSci/FinalProject/ds_finalproject/data/index/index.csv")
+
+child_opp_data2 <- child_opp_data1 %>%
+  na.omit(child_opp_data1) %>%
+  filter(year == 2015) %>%
+  select(geoid, pop, msaname15, z_ED_nat, z_HE_nat, z_COI_nat) %>%
+  clean_names()
+
+#joining the census and COI data
+states_2017 <- left_join(states_2017, child_opp_data2, by= "geoid")
+
 ```
 
 ## Using the Census API (via a url query) to pull median income and some mapping exploration
@@ -104,28 +120,28 @@ us_50_states <- as_tibble(pop_matrix[2:nrow(pop_matrix),],.name_repair = "minima
 names(us_50_states) <- us_50_states[1,]
 
 #this is just me trying to create example maps using a different type of package
-ca_example_map <- get_acs(
-  geography = "tract",
-  variables = c(total_pop = "B01003_001", #total population
-                #income_pov = "C17002_001", #income to poverty ratio
-                #weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-                #hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-                #travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-                #female_count = "B01001_026", #total female
-                #computer_count ="B28010_001", #computers in household
-                #female_marital_alloc = "B99131_001", #allocation of marital status for females
-                #travel_work = "B08303_001", #travel time to work
-                #education_alloc = "B99151_001", #allocation of educational attainment (number of people who have completed HS)
-                med_income = "B06011_001" #median income level (this is our outcome variable)
-                ), 
-  output = "wide",
-  state = states,
-  year = 2017) # data from years 2013 - 2017
+# ca_example_map <- get_acs(
+#   geography = "tract",
+#   variables = c(total_pop = "B01003_001", #total population
+#                 #income_pov = "C17002_001", #income to poverty ratio
+#                 #weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+#                 #hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+#                 #travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+#                 #female_count = "B01001_026", #total female
+#                 #computer_count ="B28010_001", #computers in household
+#                 #female_marital_alloc = "B99131_001", #allocation of marital status for females
+#                 #travel_work = "B08303_001", #travel time to work
+#                 #education_alloc = "B99151_001", #allocation of educational attainment (number of people who have completed HS)
+#                 med_income = "B19013_001" #median income level (this is our outcome variable)
+#                 ), 
+#   output = "wide",
+#   state = states,
+#   year = 2017) # data from years 2013 - 2017
 
-us_map <- get_acs(
+us_map <- tidycensus::get_acs(
   geography = "state", 
   variables = c(total_pop = "B01003_001", 
-                med_income = "B06011_001"), 
+                med_income = "B19013_001"), 
   output = "wide", 
   state = states, 
   geometry = TRUE, 
@@ -139,29 +155,17 @@ library(mapview)
 #this is an interactive map
 mapview(us_map, zcol = "med_incomeE")
 
-# #requesting census API
-# acsJson <- GET(url = censusUrl)
-# 
-# #convert the request to text
-# acsJsonTxt <- content(acsJson, as = "text")
-# 
-# #convert from text to character matrix
-# acsJsonMatrix <- fromJSON(acsJsonTxt)
-# 
-# #separate the data from the headers (creating a tibble for the non-header data)
-# acsData2Temp <- as_tibble(acsJsonMatrix[2:nrow(acsJsonMatrix), ], .name_repair = "minimal")
-# 
-# #add headers back to the data frame:
-# names(acsData2Temp) <- acsJsonMatrix[1, ]
+
+
+
 
 ```
 
 ## the place where we'll clean data
 ```{r - cleaning data}
 
+#removing all NAs
 states_2017 <- na.omit(states_2017)
-only_numb <- states_2017 %>%
-  select(-geoid, -name)
 
 #making all variables log
 states_2017 <- states_2017 %>%
@@ -178,6 +182,10 @@ states_2017 <- states_2017 %>%
     log_assoc_count = log(assoc_count),
     log_bach_count = log(bach_count)
     )
+
+#only using the numbers for the recipe
+only_numb <- states_2017 %>%
+  select(starts_with("log_"), starts_with("z"))
 
 ```
 
@@ -458,6 +466,7 @@ states_2017 %>%
   geom_smooth(method=lm, se=FALSE)
 
 ```
+
 ```{r EDA}
 #EDA for select states
 #CA------------
@@ -931,13 +940,12 @@ states_2017_test <- testing(states_2017_split)
 folds <- vfold_cv(data = states_2017_train, v = 10)
 
 #what other steps would be good to include here? *** UPDATE ACORDING TO THE VARIABLES USED
-states_2017_rec <- recipe(med_income ~ ., data = states_2017_train) %>%
+states_2017_rec <- recipe(log_med_income ~ ., data = states_2017_train) %>%
   step_naomit(all_predictors()) %>%
   step_nzv(all_predictors()) %>%
-  step_filter_missing(all_predictors()) %>%
+  step_filter_missing(all_predictors())
   #step_center() %>%
   #step_normalize() %>%
-  step_log() 
 # 
 # %>%
 #   prep(training = states_2017_train) 
@@ -1052,8 +1060,6 @@ collect_metrics(knn_res) %>%
 
 ```
 
-
-
 ## Random forest model *infrastructure*
 ```{r - Exercise 02: random forest model}
 treeNumb <- 1000
@@ -1129,7 +1135,50 @@ rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate =
 
 ```
 
-## geospatial work beginnings
+
+## geospatial/advanced data viz
+```{r}
+#load in income data from census - we won't need this once we finalize the earlier sections
+map_inc <- tidycensus::get_acs(
+  geography = "state", 
+  variables = c(med_income = "B19013_001"), 
+  output = "wide", 
+  year = 2017) %>%
+  janitor::clean_names() %>%
+  select(med_income_e, name)
+
+#loading in the mad that looks best and removing all population-related columns
+map_US <- usa_sf("lcc") %>%
+  select(-starts_with("pop")) 
+
+#here we're fusung the income and state data - this won't be needed later on
+map_US_inc <- left_join(map_US, map_inc, by = "name")
+
+#this is where we'll put all relevant data that will appear when we hover over a state
+map_US_inc <- map_US_inc %>% 
+  mutate(median_income = med_income_e,
+         hoverText = paste0("State: ", as.character(name), "\n", 
+                            "Median Income: ", as.character(median_income), "\n", 
+                            "Predicted Median Income: ", as.character(census_area), "\n",
+                            "COI z-score: ", as.character(iso_3166_2), "\n",
+                            "Health z-score: ", as.character(fips_state)))
+
+#here's the figure - we can come back and make it look prettier if needed
+map1 <- map_US_inc %>%
+  ggplot() +
+  geom_sf_interactive(size = 0.2, color = "white", aes(fill = median_income,
+    data_id = hoverText, tooltip = hoverText)) +
+  labs(fill='Median Income') +
+  theme_void()
+
+#this initializes the interactive bit
+girafe(ggobj = map1) %>%
+  girafe_options(opts_hover(css = "fill:blue;"))
+```
+
+
+
+## geospatial work beginnings - experimenting with what works and what doesn't
 Advanced data visualization (e.g., interactive visualization)
 ```{r}
 #a more replicable way to download the data - make sure you have a "data" folder in your "ds_finalproject" folder
@@ -1163,16 +1212,7 @@ geoCensusStates %>%
   coord_sf(crs = 5070, datum = NA) +
   theme_map()
 
-#Map idea 2 - this is the cleanest so far but it doesn't use the census 
-usa_sf() %>% 
-  ggplot() +
-  geom_sf() +
-  theme_map()
-
-#map idea 3 - This may get messy but on the surface it's cool
-mapview(geoCensusStates)
-
-#map idea 4 
+#map idea 2
 library(maps)
 us_states <- map_data("state")
 head(us_states)
@@ -1181,13 +1221,10 @@ p <- ggplot(data = us_states,
             mapping = aes(x = long, y = lat,
                           group = group))
 
-p + geom_polygon(fill = "white", color = "black")
-
-library(tigris)
-plot(us_
+p + geom_polygon(fill = "white", color = "black") +
+  theme_map()
 
 ```
-
 
 
 
