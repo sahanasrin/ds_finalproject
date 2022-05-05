@@ -167,6 +167,10 @@ mapview(us_map, zcol = "med_incomeE")
 #removing all NAs
 states_2017 <- na.omit(states_2017)
 
+#removing inf
+states_2017 <- states_2017 %>%
+  filter_all(all_vars(!is.infinite(.)))
+
 #making all variables log
 states_2017 <- states_2017 %>%
   mutate(
@@ -1130,7 +1134,7 @@ predictions_testing <- bind_cols(states_2017_test,
   )
 
 #rmse for test data
-rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate = .pred)
+rmse(data = predictions_testing, truth = states_2017_test$log_med_income, estimate = .pred)
 
 
 ```
