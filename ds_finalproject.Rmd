@@ -66,7 +66,7 @@ states_2017 <- get_acs(
                 female_count = "B01001_026", #total female
                 computer_count ="B28010_001", #computers in household
                 #female_marital_alloc = "B99131_001", #allocation of marital status for females
-                travel_work = "B08303_001", #travel time to work
+                #travel_work = "B08303_001", #travel time to work
                 education_alloc = "B99151_001", #allocation of educational attainment (number of people who have completed HS)
                 med_income = "B19013_001", #median income level in last 12 months (this is our outcome variable)
                 hs_count = "B15003_017", #number of people with a HS diploma
@@ -92,8 +92,8 @@ for ( col in 1:ncol(states_2017)){
 
 ```{r}
 # reading in childhood opportunity data -------------
-child_opp_data1 <- read_csv("~/Desktop/GU_3Spring2022/DataSci/FinalProject/ds_finalproject/data/index/index.csv")
-
+child_opp_data1 <- read_csv("~/Desktop/GU_3Spring2022/DataSci/FinalProject/ds_finalproject/data/index.csv")
+#child_opp_data1 <- read_csv("https://github.com/sahanasrin/ds_finalproject/blob/main/data/index.csv")
 child_opp_data2 <- child_opp_data1 %>%
   na.omit(child_opp_data1) %>%
   filter(year == 2015) %>%
@@ -167,10 +167,6 @@ mapview(us_map, zcol = "med_incomeE")
 #removing all NAs
 states_2017 <- na.omit(states_2017)
 
-#removing inf
-states_2017 <- states_2017 %>%
-  filter_all(all_vars(!is.infinite(.)))
-
 #making all variables log
 states_2017 <- states_2017 %>%
   mutate(
@@ -178,7 +174,7 @@ states_2017 <- states_2017 %>%
     log_travel_min_work_agg = log(travel_min_work_agg),
     log_female_count = log(female_count),
     log_computer_count = log(computer_count),
-    log_travel_work = log(travel_work),
+   # log_travel_work = log(travel_work),
     log_education_alloc = log(education_alloc),
     log_med_income = log(med_income),
     log_hs_count = log(hs_count),
@@ -190,6 +186,13 @@ states_2017 <- states_2017 %>%
 #only using the numbers for the recipe
 only_numb <- states_2017 %>%
   select(starts_with("log_"), starts_with("z"))
+
+# only_numb <- states_2017 %>%
+#   select(-geoid, -name, -pop, -msaname15, -ends_with("M"))
+
+#removing inf
+only_numb <- only_numb %>%
+  filter_all(all_vars(!is.infinite(.)))
 
 ```
 
@@ -947,14 +950,15 @@ folds <- vfold_cv(data = states_2017_train, v = 10)
 states_2017_rec <- recipe(log_med_income ~ ., data = states_2017_train) %>%
   step_naomit(all_predictors()) %>%
   step_nzv(all_predictors()) %>%
-  step_filter_missing(all_predictors())
-  #step_center() %>%
-  #step_normalize() %>%
-# 
+  step_filter_missing(all_predictors()) 
+
+
 # %>%
-#   prep(training = states_2017_train) 
-# 
-# temp <- bake(states_2017_rec, new_data = NULL)
+#   step_log(-starts_with("z_"), all_predictors(), all_outcomes()) %>%
+#   step_naomit(all_predictors()) %>%
+#   step_rm(contains("nf")) %>%
+#   prep(training = states_2017_train)
+#  temp <- bake(states_2017_rec, new_data = NULL)
 
 ```
 
@@ -965,7 +969,7 @@ lm_mod <- linear_reg() %>%
   set_engine(engine = "lm") %>%
   set_mode(mode = "regression")
 
-#workflow - (we dont use prep when we run the recipe here)
+#workflow - (we don't use prep when we run the recipe here)
 lm_wf <- workflow() %>%
   add_recipe(recipe = states_2017_rec) %>%
   add_model(spec = lm_mod)
@@ -986,16 +990,15 @@ lm_final <- lm_wf %>%
 lm_fit <- lm_final %>%
   fit(states_2017_train)
 
-
 #RMSE looks consistent across folds
 collect_metrics(lm_cv, summarize = FALSE) %>%
   filter(.metric == "rmse") %>%
   ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
   geom_line() +
   geom_point() +
-  geom_label(hjust = .1, nudge_y = -.1) +
+  geom_label(hjust = .1, nudge_y = -.02) +
   scale_y_continuous(limits = c(0, .3)) +
-  labs(title = "Chicago “L” Train Ridership: Linear Regression Model (RMSE Across 10 Folds)", 
+  labs(title = "Median Income: Linear Regression Model (RMSE Across 10 Folds)", 
        y = "Predicted RMSE",
        x = "Fold Number") +
   theme_minimal()
@@ -1005,6 +1008,10 @@ collect_metrics(lm_cv) %>%
   filter(.metric == "rmse") %>%
   select(mean) %>%
   pull(mean)
+
+lm_fit %>%
+  extract_fit_parsnip() %>%
+  vip(num_features = 10)
 
 ```
 
@@ -1021,7 +1028,6 @@ knn_workflow <- workflow() %>%
 
 #creating a tuning grid
 #knn_grid <- tibble(neighbors = seq(from = 15, to = 27, by = 2))
-
 
 #resampling using the 10-v-fold process specified above
 knn_res <- knn_workflow %>%
@@ -1049,9 +1055,9 @@ collect_metrics(knn_res, summarize = FALSE) %>%
   ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
   geom_line() +
   geom_point() +
-  scale_y_continuous(limits = c(0, 5)) +
-  geom_label(hjust = .5, nudge_y = -.3) +
-  labs(title = "Chicago “L” Train Ridership: KNN Model (RMSE Across 10 Folds)", 
+  geom_label(hjust = .1, nudge_y = -.02) +
+  scale_y_continuous(limits = c(0, .3)) +
+  labs(title = "Median Income: KNN Model (RMSE Across 10 Folds)", 
        y = "Predicted RMSE",
        x = "Fold Number") +
   theme_minimal()
@@ -1111,9 +1117,9 @@ collect_metrics(rf_fit_rs, summarize = FALSE) %>%
   ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
   geom_line() +
   geom_point() +
-  geom_label(hjust = .5, nudge_y = -.2) +
-  scale_y_continuous(limits = c(0, 4)) +
-  labs(title = "Chicago “L” Train Ridership: Random Forest Model (RMSE Across 10 Folds)", 
+  geom_label(hjust = .1, nudge_y = -.02) +
+  scale_y_continuous(limits = c(0, .3)) +
+  labs(title = "Median Income: Random Forest Model (RMSE Across 10 Folds)", 
        y = "Predicted RMSE",
        x = "Fold Number") +
   theme_minimal()
