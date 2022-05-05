@@ -1,0 +1,691 @@
+
+
+```{r EDA}
+#EDA for all states--------------------
+
+#all states -------------
+#means of variables for all states
+means = colMeans(states_2017[,c(variable_list)])
+barplot(means[order(means,decreasing=T)])
+
+summary(states_2017$med_income)
+states_2017 %>%
+  ggplot(aes(med_income)) +
+  geom_freqpoly(binwidth = 1000) + 
+  labs(x = "Median Income",
+       y = "Count",
+       title = "Distribtion of Travel Time by Census Tract"
+  )
+
+summary(states_2017$travel_work)
+states_2017 %>%
+  ggplot(aes(travel_work)) +
+  geom_freqpoly(binwidth = 60) + # 60 seconds = 1 minute
+  labs(x = "Seconds Traveled to Work",
+       y = "Count",
+       title = "Distribtion of Travel Time by Census Tract"
+  )
+
+summary(states_2017$travel_min_work_agg)
+states_2017 %>%
+  ggplot(aes(travel_work)) +
+  geom_freqpoly(binwidth = 60) + # 60 seconds = 1 minute
+  labs(x = "Seconds Traveled to Work",
+       y = "Count",
+       title = "Distribtion of Travel Time by Census Tract"
+  )
+
+summary(states_2017$computer_count)
+states_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = "Computer Count by Census Tract") +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(states_2017$female_count)
+states_2017 %>%
+  ggplot(aes(female_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = "Total Women by Census Tract") +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(states_2017$total_pop)
+states_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = "Total Population by Census Tract") +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(states_2017$hs_count)
+states_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = "Total High School Degrees by Census Tract") +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(states_2017$ged_count)
+states_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = "Total GED by Census Tract") +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(states_2017$assoc_count)
+states_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = "Total Associate's Degree by Census Tract") +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(states_2017$bach_count)
+states_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = "Total Bachelor's Degree by Census Tract") +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+summary(states_2017$education_alloc)
+states_2017 %>%
+  ggplot(aes(computer_count, 1)) +
+  geom_point(alpha = 0.2) +
+  scale_y_continuous(breaks = 0) +
+  labs(y = NULL) +
+  theme_bw() +
+  theme(panel.border = ggplot2::element_blank())
+
+#med income
+states_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = travel_min_work_agg,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Total Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = total_pop,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = computer_count,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = hs_count,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = ged_count,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = assoc_count,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = med_income))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#total pop
+states_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = computer_count,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = travel_min_work_agg,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = hs_count,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = ged_count,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = assoc_count,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = total_pop))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#Travel min work agg
+states_2017 %>%
+  ggplot(aes(
+      x = female_count,
+      y = travel_min_work_agg))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = computer_count,
+      y = travel_min_work_agg))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = travel_min_work_agg))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = hs_count,
+      y = travel_min_work_agg))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = ged_count,
+      y = travel_min_work_agg))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = assoc_count,
+      y = travel_min_work_agg))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = travel_min_work_agg))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = travel_min_work_agg))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Median Income",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#female count
+states_2017 %>%
+  ggplot(aes(
+      x = computer_count,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = hs_count,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = ged_count,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = assoc_count,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = female_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#computer count
+states_2017 %>%
+  ggplot(aes(
+      x = travel_work,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = hs_count,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = ged_count,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = assoc_count,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = computer_count))+
+  geom_point() +
+  labs(x = "Seconds Traveled to Work",
+       y = "Computers in Census Tract",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#travel work
+states_2017 %>%
+  ggplot(aes(
+      x = hs_count,
+      y = travel_work))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = ged_count,
+      y = travel_work))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = assoc_count,
+      y = travel_work))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = travel_work))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = travel_work))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#hs_count
+states_2017 %>%
+  ggplot(aes(
+      x = ged_count,
+      y = hs_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = assoc_count,
+      y = hs_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = hs_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = hs_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#ged_count
+states_2017 %>%
+  ggplot(aes(
+      x = assoc_count,
+      y = ged_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = ged_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = ged_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = ged_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#assoc_count
+states_2017 %>%
+  ggplot(aes(
+      x = bach_count,
+      y = assoc_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = assoc_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+#education alloc
+states_2017 %>%
+  ggplot(aes(
+      x = education_alloc,
+      y = bach_count))+
+  geom_point() +
+  labs(x = "",
+       y = "",
+       title = "TBD") +
+  geom_smooth(method=lm, se=FALSE)
+
+```
+
