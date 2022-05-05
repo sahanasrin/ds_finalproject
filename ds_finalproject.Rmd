@@ -37,11 +37,13 @@ library(here)
 library(mapview)
 library(ggthemes)
 library(tigris)
-library(albersusa)
+#library(albersusa)
 library(ggiraph)
+library(srvyr)
 
 ```
 
+#Census API Query Method 1 and Column Name Clean-Up
 ```{r}
 #creating dataset ------------
 #census api key
@@ -85,14 +87,14 @@ states_2017 <- states_2017 %>%
 #drop the E estimate columns
 for ( col in 1:ncol(states_2017)){
     colnames(states_2017)[col] <-  sub("E.*", "", colnames(states_2017)[col])
-
     }
-
 ```
 
+#Read in Childhood Opportunity Dataset and Join Census Data with New Dataset
 ```{r}
 # reading in childhood opportunity data -------------
-child_opp_data1 <- read_csv("~/Desktop/GU_3Spring2022/DataSci/FinalProject/ds_finalproject/data/index.csv")
+#child_opp_data1 <- read_csv("~/Desktop/GU_3Spring2022/DataSci/FinalProject/ds_finalproject/data/index.csv")
+child_opp_data1 <- read_csv("data/index.csv")
 #child_opp_data1 <- read_csv("https://github.com/sahanasrin/ds_finalproject/blob/main/data/index.csv")
 child_opp_data2 <- child_opp_data1 %>%
   na.omit(child_opp_data1) %>%
@@ -102,10 +104,9 @@ child_opp_data2 <- child_opp_data1 %>%
 
 #joining the census and COI data
 states_2017 <- left_join(states_2017, child_opp_data2, by= "geoid")
-
 ```
 
-## Using the Census API (via a url query) to pull median income and some mapping exploration
+## Census API Query Method 2 (via a url query) to pull median income and some mapping exploration
 ```{r}
 #using census API Query to get data on median household income levels in 50 states
 #i'm not really using this anywhere yet 
@@ -149,21 +150,16 @@ us_map <- tidycensus::get_acs(
 
 plot(us_map["med_incomeE"])
        
-plot(ca_example_map["med_incomeE"])
-library(mapview)
+#plot(ca_example_map["med_incomeE"])
 
 #this is an interactive map
+library(mapview)
 mapview(us_map, zcol = "med_incomeE")
-
-
-
-
 
 ```
 
-## the place where we'll clean data
+##Cleaning the states_2017 joined dataset
 ```{r - cleaning data}
-
 #removing all NAs
 states_2017 <- na.omit(states_2017)
 
@@ -174,7 +170,7 @@ states_2017 <- states_2017 %>%
     log_travel_min_work_agg = log(travel_min_work_agg),
     log_female_count = log(female_count),
     log_computer_count = log(computer_count),
-   # log_travel_work = log(travel_work),
+   #log_travel_work = log(travel_work),
     log_education_alloc = log(education_alloc),
     log_med_income = log(med_income),
     log_hs_count = log(hs_count),
@@ -193,12 +189,10 @@ only_numb <- states_2017 %>%
 #removing inf
 only_numb <- only_numb %>%
   filter_all(all_vars(!is.infinite(.)))
-
 ```
 
 ## specific state queries using get_acs
 ```{r - states}
-# 
 # #California ----------------
 # california_2017 <- get_acs(
 #   geography = "tract",
@@ -353,13 +347,91 @@ variable_list = c('total_pop',
                   'bach_count')
 ```
 
+#Sahana EDA (Some visualizations that tell the story in a slightly clearer way)
+```{r EDA}
+#finding number of people in different income brackets
+states_2017_EDA <- states_2017 %>% 
+  mutate(
+    income_bracket = case_when(
+    med_income <= 25161 ~ "Lower", 
+    med_income <= 78624 ~ "Lower-Median", 
+    med_income <= 186151 ~ "Median-Upper", 
+    TRUE ~ "Upper") 
+  )
+
+states_2017_EDA %>%
+  ggplot(mapping = aes(x = income_bracket, y = total_pop)) + 
+  geom_col() +
+  labs (
+    title = "Number of People in the United States in Specified Income Brackets", 
+    subtitle = "Employment Figures From April 2021", 
+    x = "Income Bracket", 
+    y = "Number of People", 
+    caption = ""
+  )
+
+#finding proportion of census tracts in specified income bracket 
+states_2017_EDA %>% 
+  mutate(lower_income = if_else(income_bracket == "Lower", 1, 0)) %>% #gen dummy variable 
+  mutate(lower_median_income =if_else(income_bracket == "Lower-Median", 1, 0)) %>%
+  mutate(median_upper_income = if_else(income_bracket == "Median-Upper",0, 1)) %>%
+  #filter(AGE>=16) %>% #remove respondents less than or equal to 16 
+  #group_by(YEAR) %>% 
+  summarize(
+    lower_income = sum(lower_income == 1), 
+    lower_median_income = sum(lower_median_income == 1), 
+    median_upper_income = sum(median_upper_income == 1)  
+  )
+
+#group by income bracket - find number of computers per category 
+#lower level of computers among lower income - this bracket is underrepresented in the data comparatively speaking
+computers_viz <- ggplot(states_2017_EDA, aes(x="", y=computer_count, fill=income_bracket)) +
+  geom_bar (width = 1, stat = "identity")
+computers_viz <- computers_viz + coord_polar("y", start=0)
+computers_viz 
+
+#group by income bracket - create a boxplot
+#maybe you should filter by in this 
+travel_time_viz <- ggplot(states_2017_EDA, aes (x = travel_min_work_agg, y = income_bracket)) + 
+  geom_boxplot()
+travel_time_viz
+
+# travel_time_viz <- boxplot(travel_min_work_agg~income_bracket, 
+#         data = states_2017_EDA,
+#         main = "Travel Time to Work By Income Bracket", 
+#         xlab = "Income Bracket", 
+#         ylab = "Time Traveled to Work Aggregated", 
+#         col = "orange", 
+#         border = "brown"
+# ) 
+# travel_time_viz
+
+
+
+#making it interactive??? 
+#girafe(ggobj1 = computers_viz) %>%
+  #girafe_options(opts_hover(css = "fill:blue;"))
+
+
+# states_2017_EDA %>% 
+#   group_by(income_bracket) %>%
+#   summarize(computers = sum(computer_count)) %>% 
+#   ggplot(aes(x=income_bracket, y=computer_count, fill=group)) +
+#   geom_bar(stat="identity", width=1, color="white") +
+#   coord_polar("y", start=0) +
+#   
+#   theme_void() # remove background, grid, numeric labels
+# 
+#   
+```
+
 ```{r EDA}
 #EDA for all states--------------------
 
 #all states -------------
 #means of variables for all states
-means = colMeans(states_2017[,c(variable_list)])
-barplot(means[order(means,decreasing=T)])
+#means = colMeans(states_2017[,c(variable_list)])
+#barplot(means[order(means,decreasing=T)])
 
 summary(states_2017$travel_work)
 
@@ -1138,13 +1210,13 @@ collect_metrics(rf_fit_rs) %>%
 predictions_testing <- bind_cols(states_2017_test,
     predict(object = lm_fit, new_data = states_2017_test)
   )
+predictions_testing
 
 #rmse for test data
 rmse(data = predictions_testing, truth = states_2017_test$log_med_income, estimate = .pred)
 
 
 ```
-
 
 ## geospatial/advanced data viz
 ```{r}
@@ -1185,8 +1257,6 @@ map1 <- map_US_inc %>%
 girafe(ggobj = map1) %>%
   girafe_options(opts_hover(css = "fill:blue;"))
 ```
-
-
 
 ## geospatial work beginnings - experimenting with what works and what doesn't
 Advanced data visualization (e.g., interactive visualization)
@@ -1236,13 +1306,7 @@ p + geom_polygon(fill = "white", color = "black") +
 
 ```
 
+#Unsupervised Machine Learning Model Using States
+```{r - unsupervised clustering}
 
-
-
-
-
-
-
-
-
-
+```
