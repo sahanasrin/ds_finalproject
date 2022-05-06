@@ -40,6 +40,8 @@ library(tigris)
 library(ggiraph)
 library(srvyr)
 library(factoextra)
+library(knitr)
+library(png)
 ```
 
 ##The question that lies at the heart of our analysis is: Using a small number of continuous variables, how accurately can our specified model predict median household income in United States Census Tracts? We believe this question to be critical in helping define salient predictors of the amount of wealth households in America are capable of accumulating. As of February 2022 per the Center of Poverty and Social Policy in Columbia University, poverty rates in the US were around 14.4%, with the expiration of Child Tax Credit (CTC) payments hastening the increase in childhood poverty rates. Thus, we believe that our question poses important implications to both short-term concerns related to the quality of life of American families as well as long-term indicators of economic growth and progress in the country at large. And, perhaps if certain unapparent variables demonstrate to have some level of predictive power over the outcome of median household income, digestable changes can be made in the lives of everyday Americans with serve to improve their lives.
@@ -163,6 +165,12 @@ states_2017 <- states_2017 %>%
 #it looks like we should center some variables, but not log everything
 #we need to log GED, and med_income
 #hist.data.frame(only_numb)
+
+#![EDA for all variables]("/ds_finalproject/images/greatestFigure.png")
+
+# eda_figure <- "/ds_finalproject/images/greatestFigure.png"
+# eda <- readPNG(eda_figure, native = TRUE, info = TRUE)
+# eda
 ```
 
 #Exploratory Data Analysis Phase 1: Understanding How Key Variables of Interest Interplay
@@ -664,9 +672,12 @@ map_US_Interactive2 %>%
 # mapview(us_map, zcol = "med_incomeE")
 ```
 
+##Kmeans
+###We conclude our analysis by running K-means of variables selected from our previous models that best predicted median household income. The variables we selected are computer_count, bach_count, travel_min_work_agg, and hs_count. For this method, we are simply looking to conduct K-mean clustering of all 50 states, Puerto Rico, and Washington, DC, by their principle componenents, as referenced by their principle components. We found the ideal number of clusters to be 2 from our sum of squares, silhouette, and gap-stat visualizations. Our first plot shows each of the states alongside a color matrix of their corresponding states. This is a helpful representation of the general displacement of each state. In our second plot, we see two distinct clusters, coded as red and blue. The majority of our states fall within the first cluster (red), while California, New York, Texas, and Florida fall within our second cluster (blue). As it pertains to median household income...
+
 #Unsupervised Machine Learning Models 
 ```{r - unsupervised clustering}
-url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B28010_001E,B15003_022E,B08133_001E,B15003_017E&for=state:*")
+url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B28010_001E,B15003_022E,B08133_001E,B15003_017E,B19013_001E&for=state:*")
 popurl <- GET(url = url)
 http_status(popurl)
 popurl <- content(popurl, as = "text")
@@ -680,7 +691,7 @@ states = states[-1,]
 states[is.na(states)] <- 0
 
 #only contains values 
-drop <- c("NAME", "state")
+drop <- c("NAME", "state", "B19013_001E")
 states_numeric <- states[,!(names(states) %in% drop)]
 states_numeric[1:4] <- sapply(states_numeric[1:4], as.numeric)
 head(states_numeric)
@@ -709,6 +720,7 @@ fviz_nbclust(states_numeric, FUN = kmeans, method = "silhouette")
 #gap statistic
 fviz_nbclust(states_numeric, FUN = kmeans, method = "gap_stat")
 
+#creating a function to kmeans
 num_kmeans <- function(k, data){
   #generate k-means clusters
   kmeans <- kmeans(states_numeric, 
@@ -726,6 +738,7 @@ num_kmeans <- function(k, data){
 kmeans_2 <- num_kmeans(k = 2, data = states_pcs) 
 kmeans_2
 
+#graphing Kmeans with color as name
 ggplot() +
   geom_point(
   kmeans_2,
@@ -733,13 +746,14 @@ ggplot() +
     alpha = 0.5
     ) +
   labs(
-    title = "K-Means with K= K and PCA",
+    title = "K-Means with K= 2 and PCA",
     x = "PC1",
     y = "PC2"
     ) +
   theme_minimal() +
   guides(text = NULL)
 
+#graphing kmeans with label as name
 ggplot(
   kmeans_2, aes(x = PC1, y = PC2, color = factor(cluster), label = NAME)) +
   geom_point() +
@@ -750,80 +764,14 @@ ggplot(
     y = "PC2"
     ) +
   theme_minimal() +
-  guides(text = NULL) + 
-  options(repr.plot.width=15, repr.plot.height=8)
+  guides(text = NULL)
 
-# url1 <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B19013_001E&for=state:*")
-# popurl1 <- GET(url = url1)
-# http_status(popurl1)
-# popurl1 <- content(popurl1, as = "text")
-# pop_matrix1 <- fromJSON(popurl1)
-# #turn body of character matrix into a tibble
-# states1 <- as_tibble(pop_matrix1[1:nrow(pop_matrix1),],.name_repair = "minimal")
-# names(states1) <- states1[1,]
-# states1 = states1[-1,]
-# 
-# #take out na values
-# states1[is.na(states1)] <- 0
-# 
-# #only contains values 
-# drop <- c("NAME", "state")
-# states_numeric1 <- states1[,!(names(states1) %in% drop)]
-# states_numeric1[1] <- sapply(states_numeric1[1], as.numeric)
-# head(states_numeric1)
-# 
-# #run PCA on states_numeric
-# states_pca1 <- prcomp(states_numeric1, center = TRUE, scale. = TRUE)
-# 
-# #how much variance explained? 
-# summary(states_pca1)
-# 
-# #extract principle components
-# states_pcs1 <- states_pca1 %>% 
-#   .$x %>% 
-#   as_tibble()
-# 
-# #combine pc's to names
-# states_pcs1 <- bind_cols(
-#   select(states1, -state), 
-#   select(states_pcs1, PC1, PC2)
-# )
-# 
-# #total within sum of squares to find ideal number of clusters
-# fviz_nbclust(states_numeric1, FUN = kmeans, method = "wss")
-# #total silhouette width
-# fviz_nbclust(states_numeric1, FUN = kmeans, method = "silhouette")
-# #gap statistic
-# fviz_nbclust(states_numeric1, FUN = kmeans, method = "gap_stat")
-# 
-# num_kmeans1 <- function(k, data){
-#   #generate k-means clusters
-#   kmeans <- kmeans(states_numeric1, 
-#   centers = k, 
-#   nstart = 100
-#   );
-# #create dataframe that binds together clusters and PC's
-#   states_clusters1 <- bind_cols(
-#   select(states1, NAME), 
-#   select(data, PC1, PC2), 
-#   cluster = kmeans$cluster
-#   )
-# }
-# 
-# kmeans1_2 <- num_kmeans1(k = 2, data = states_pcs1) 
-# kmeans1_2
-# 
-# 
-# ggplot(
-#   kmeans_2, aes(x = PC1, y = PC2, color = factor(cluster), label = NAME)) +
-#   geom_point() +
-#   geom_text(hjust = 0, vjust = 0) + 
-#   labs(
-#     title = "K-Means with K = 2 and PCA",
-#     x = "PC1",
-#     y = "PC2"
-#     ) +
-#   theme_minimal() +
-#   guides(text = NULL) + 
-#   options(repr.plot.width=15, repr.plot.height=8)
+#summarizing by median household income
+drop1 <- c("B28010_001E","B15003_022E","B08133_001E","B15003_017E")
+states_med <- states %>%
+  select(-c(drop1))
+states_med <- states_med %>%
+  rename(median_income = "B19013_001E")
+
+states_med$median_income <- as.numeric(states_med$median_income)
 ```
