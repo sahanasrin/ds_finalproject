@@ -169,7 +169,7 @@ states_2017 <- states_2017 %>%
 #Exploratory Data Analysis Phase 1: Understanding How Key Variables of Interest Interplay
 #The goal of this initial EDA is to understand the distribution of American households across income brackets specified by the US News World Report linked below, as well as gain insight into features that characterize these income brackets. 
 
-#The first vizualization titled "Number of People in the United States Living in Tracts with Specified Income Brackets" shows us that the number of people living in a middle class census tract is the highest, with the lower middle class bracket following behind. Bearing in mind that this does not give insight into the actual number of people in each of these brackets, it tells us that the majority of Americans are occupying what can be known as "middle-class America." In terms of a specific number of census tracts in each bracket, [FILL IN THIS AFTER YOU FIX THE CODE]
+#The first vizualization titled "Number of People in the United States Living in Tracts with Specified Income Brackets" shows us that the number of people living in a middle class census tract is the highest, with the lower middle class bracket following behind. Bearing in mind that this does not give insight into the actual number of people in each of these income brackets, it tells us that the majority of Americans are residing in what can be known as "middle-class America." In terms of a specific number of census tracts in each bracket, we observe that 384 fall in Poor, 2494 fall in Lower-Middle Class, 6787 fall in Middle Class, and 114 fall in upper class. Finding ways to grow the middle-class, given that nearly 3,000 tracts fall below it, is crucial.
 
 #The final vizualization titled "" demonstrates that average aggregated travel time for members in tracts, taken as a proportion of the total individuals in the given tract, is highest for those in the median-upper income level. 
 ```{r EDA}
@@ -192,21 +192,22 @@ states_2017_EDA %>%
     subtitle = "Information on the Relative Sizes of Income Brackets", 
     x = "Income Bracket", 
     y = "Number of People", 
-    caption = "ACS 5 Year Survey and Childhood Index Opportunity Scores"
-  )
+    caption = "ACS 5 Year Survey"
+  ) + 
+   scale_x_discrete(limits = c("Poor-Near Poor", "Lower-Middle Class", "Middle Class", "Upper"))
 
-#finding proportion of census tracts in specified income bracket 
-# states_2017_EDA %>% 
-#   mutate(poor = if_else(income_bracket == "Poor-Near Poor", 1, 0)) %>% #gen dummy variable 
-#   mutate(lower_middle =if_else(income_bracket == "Lower-Middle Class", 1, 0)) %>% 
-#   mutate(middle = if_else(income_bracket == "Middle Class",1, 0)) %>%
-#   mutate(upper = if_else (income_bracket == "Upper", 1, 0))
-#   summarize(
-#   poor == sum(poor == 1), 
-#   lower-middle == sum(lower_middle == 1), 
-#   middle == sum(middle == 1), 
-#   upper == sum(upper == 1)
-#  )
+#finding number of census tracts in specified income bracket
+states_2017_EDA %>%
+  mutate(poor = if_else(income_bracket == "Poor-Near Poor", 1, 0)) %>% #gen dummy variable
+  mutate(lower_middle =if_else(income_bracket == "Lower-Middle Class", 1, 0)) %>%
+  mutate(middle = if_else(income_bracket == "Middle Class",1, 0)) %>%
+  mutate(upper = if_else(income_bracket == "Upper", 1, 0)) %>%
+  summarize(
+  poor = sum(poor == 1),
+  lower_middle = sum(lower_middle == 1),
+  middle = sum(middle == 1),
+  upper = sum(upper == 1)
+ )
 
 #group by income bracket - find number of computers per category 
 #lower level of computers among lower income - this bracket is underrepresented in the data comparatively speaking
@@ -792,5 +793,4 @@ ggplot(
 #   theme_minimal() +
 #   guides(text = NULL) + 
 #   options(repr.plot.width=15, repr.plot.height=8)
-
 ```
