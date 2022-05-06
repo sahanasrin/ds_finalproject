@@ -8,16 +8,15 @@ output: html_document
 
 # PPOL 670 | Final Project
 
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-#clear up workspace
+#code for clearing up workspace
 rm(list = ls(all.names = TRUE))
 graphics.off()
 cat("\014")
 
-#loading packages ------------
+#loading in all relevant packages 
 library(tidycensus)
 library(tidyverse)
 library(tidymodels)
@@ -40,24 +39,24 @@ library(tigris)
 #library(albersusa)
 library(ggiraph)
 library(srvyr)
-
 ```
 
 #Census API Query Method 1 and Column Name Clean-Up
 ```{r}
-#creating dataset ------------
+#creating dataset 
 #census api key
 #Sys.getenv("CENSUS_API_KEY")
-#census_api_key("db5d1b7c4b6a966c022bf9cd13c266424d6d2c36", install = TRUE)
-#loading in variable list
 
+#load in state variable list
 states = c("CA", "OR", "WA", "NV", "AZ", "CO", "ID", "MT", "WY", "NM", "AK", "HI","UT",
            "ND", "SD", "NE", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "MI", "OH",
            "OK", "TX", "LA", "AR", "MS", "AL", "GA", "FL", "TN", "KY", "WV", "VA", "NC", "SC", "DE","MD",
            "ME", "NH", "VT", "MA", "CT", "RI", "NJ", "PA", "NY")
 
+#browse variable names 
 variables_2017 <- load_variables(2017, "acs5", cache = TRUE)
-#All Relevant States ----------------
+
+#use get_acs method to retrieve desired data on all 50 states 
 states_2017 <- get_acs(
   geography = "tract",
   variables = c(total_pop = "B01003_001", #total population
@@ -80,10 +79,11 @@ states_2017 <- get_acs(
   state = states,
   year = 2017) # data from years 2013 - 2017
 
-#renaming geoid and name
+#renaming geoid and name columns 
 states_2017 <- states_2017 %>%
   rename(geoid = GEOID,
          name = NAME)
+
 #drop the E estimate columns
 for ( col in 1:ncol(states_2017)){
     colnames(states_2017)[col] <-  sub("E.*", "", colnames(states_2017)[col])
@@ -92,10 +92,10 @@ for ( col in 1:ncol(states_2017)){
 
 #Read in Childhood Opportunity Dataset and Join Census Data with New Dataset
 ```{r}
-# reading in childhood opportunity data -------------
-#child_opp_data1 <- read_csv("~/Desktop/GU_3Spring2022/DataSci/FinalProject/ds_finalproject/data/index.csv")
+#reading in childhood opportunity data 
 child_opp_data1 <- read_csv("data/index.csv")
-#child_opp_data1 <- read_csv("https://github.com/sahanasrin/ds_finalproject/blob/main/data/index.csv")
+
+#clean childhood opportunity data 
 child_opp_data2 <- child_opp_data1 %>%
   na.omit(child_opp_data1) %>%
   filter(year == 2015) %>%
@@ -104,58 +104,6 @@ child_opp_data2 <- child_opp_data1 %>%
 
 #joining the census and COI data
 states_2017 <- left_join(states_2017, child_opp_data2, by= "geoid")
-```
-
-## Census API Query Method 2 (via a url query) to pull median income and some mapping exploration
-```{r}
-#using census API Query to get data on median household income levels in 50 states
-#i'm not really using this anywhere yet 
-url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B06011_001E&for=state:*")
-popurl <- GET(url = url)
-http_status(popurl)
-popurl <- content(popurl, as = "text")
-pop_matrix <- fromJSON(popurl)
-#turn body of character matrix into a tibble
-us_50_states <- as_tibble(pop_matrix[2:nrow(pop_matrix),],.name_repair = "minimal")
-#add variable names to the tibble
-names(us_50_states) <- us_50_states[1,]
-
-#this is just me trying to create example maps using a different type of package
-# ca_example_map <- get_acs(
-#   geography = "tract",
-#   variables = c(total_pop = "B01003_001", #total population
-#                 #income_pov = "C17002_001", #income to poverty ratio
-#                 #weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-#                 #hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-#                 #travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-#                 #female_count = "B01001_026", #total female
-#                 #computer_count ="B28010_001", #computers in household
-#                 #female_marital_alloc = "B99131_001", #allocation of marital status for females
-#                 #travel_work = "B08303_001", #travel time to work
-#                 #education_alloc = "B99151_001", #allocation of educational attainment (number of people who have completed HS)
-#                 med_income = "B19013_001" #median income level (this is our outcome variable)
-#                 ), 
-#   output = "wide",
-#   state = states,
-#   year = 2017) # data from years 2013 - 2017
-
-us_map <- tidycensus::get_acs(
-  geography = "state", 
-  variables = c(total_pop = "B01003_001", 
-                med_income = "B19013_001"), 
-  output = "wide", 
-  state = states, 
-  geometry = TRUE, 
-  year = 2017) 
-
-plot(us_map["med_incomeE"])
-       
-#plot(ca_example_map["med_incomeE"])
-
-#this is an interactive map
-library(mapview)
-mapview(us_map, zcol = "med_incomeE")
-
 ```
 
 ##Cleaning the states_2017 joined dataset
@@ -191,140 +139,11 @@ only_numb <- only_numb %>%
   filter_all(all_vars(!is.infinite(.)))
 ```
 
-## specific state queries using get_acs
-```{r - states}
-# #California ----------------
-# california_2017 <- get_acs(
-#   geography = "tract",
-#   variables = c(total_pop = "B01003_001", #total population
-#                 income_pov = "C17002_001", #income to poverty ratio
-#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-#                 female_count = "B01001_026", #total female
-#                 computer_count ="B28010_001", #computers in household
-#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
-#                 travel_work = "B08303_001", #travel time to work
-#                 education_alloc = "B99151_002", #allocation of educational attainment
-#                 ), 
-#   output = "wide",
-#   state = "CA",
-#   year = 2017) # data from years 2013 - 2017
-# #renaming geoid and name
-# california_2017 <- california_2017 %>%
-#   rename(geoid = GEOID,
-#          name = NAME)
-# #drop the E estimate columns
-# for ( col in 1:ncol(california_2017)){
-#     colnames(california_2017)[col] <-  sub("E.*", "", colnames(california_2017)[col])
-# }
-# #Oregon -------------------
-# oregon_2017 <- get_acs(
-#   geography = "tract",
-#   variables = c(total_pop = "B01003_001", #total population
-#                 income_pov = "C17002_001", #income to poverty ratio
-#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-#                 female_count = "B01001_026", #total female
-#                 computer_count ="B28010_001", #computers in household
-#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
-#                 travel_work = "B08303_001", #travel time to work
-#                 education_alloc = "B99151_002" #allocation of educational attainment
-#                 ), 
-#   output = "wide",
-#   state = "OR",
-#   year = 2017) # data from years 2013 - 2017
-# #renaming geoid and name
-# oregon_2017 <- oregon_2017 %>%
-#   rename(geoid = GEOID,
-#          name = NAME)
-# #drop the E estimate columns
-# for ( col in 1:ncol(oregon_2017)){
-#     colnames(oregon_2017)[col] <-  sub("E.*", "", colnames(oregon_2017)[col])
-# }
-# #Washington State ---------------------
-# washington_2017 <- get_acs(
-#   geography = "tract",
-#   variables = c(total_pop = "B01003_001", #total population
-#                 income_pov = "C17002_001", #income to poverty ratio
-#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-#                 female_count = "B01001_026", #total female
-#                 computer_count ="B28010_001", #computers in household
-#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
-#                 travel_work = "B08303_001", #travel time to work
-#                 education_alloc = "B99151_002" #allocation of educational attainment
-#                 ), 
-#   output = "wide",
-#   state = "WA",
-#   year = 2017) # data from years 2013 - 2017
-# #renaming geoid and name
-# washington_2017 <- washington_2017 %>%
-#   rename(geoid = GEOID,
-#          name = NAME)
-# #drop the E estimate columns
-# for ( col in 1:ncol(washington_2017)){
-#     colnames(washington_2017)[col] <-  sub("E.*", "", colnames(washington_2017)[col])
-# }
-# #Nevada --------------
-# nevada_2017 <- get_acs(
-#   geography = "tract",
-#   variables = c(total_pop = "B01003_001", #total population
-#                 income_pov = "C17002_001", #income to poverty ratio
-#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-#                 female_count = "B01001_026", #total female
-#                 computer_count ="B28010_001", #computers in household
-#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
-#                 travel_work = "B08303_001", #travel time to work
-#                 education_alloc = "B99151_002" #allocation of educational attainment
-#                 ), 
-#   output = "wide",
-#   state = "NV",
-#   year = 2017) # data from years 2013 - 2017
-# #renaming geoid and name
-# nevada_2017 <- nevada_2017 %>%
-#   rename(geoid = GEOID,
-#          name = NAME)
-# #drop the E estimate columns
-# for ( col in 1:ncol(nevada_2017)){
-#     colnames(nevada_2017)[col] <-  sub("E.*", "", colnames(nevada_2017)[col])
-# }
-# #Arizona ------------------------
-# arizona_2017 <- get_acs(
-#   geography = "tract",
-#   variables = c(total_pop = "B01003_001", #total population
-#                 income_pov = "C17002_001", #income to poverty ratio
-#                 weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
-#                 hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
-#                 travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
-#                 female_count = "B01001_026", #total female
-#                 computer_count ="B28010_001", #computers in household
-#                 female_marital_alloc = "B99131_001", #allocation of marital status for females
-#                 travel_work = "B08303_001", #travel time to work
-#                 education_alloc = "B99151_002" #allocation of educational attainment
-#                 ), 
-#   output = "wide",
-#   state = "AZ",
-#   year = 2017) # data from years 2013 - 2017
-# #renaming geoid and name
-# arizona_2017 <- arizona_2017 %>%
-#   rename(geoid = GEOID,
-#          name = NAME)
-# #drop the E estimate columns
-# for ( col in 1:ncol(arizona_2017)){
-#     colnames(arizona_2017)[col] <-  sub("E.*", "", colnames(arizona_2017)[col])
-# }
-
-```
-
+#Generate a Variable List For Upcoming EDA
 ```{r - variables}
 #For variables: E = estimate, M = margin of error
 #aggregate 
-	
+
 # B01003_001 = total population
 # C17002_001 = income to poverty ratio
 # B992518_001 = allocation of gross rent
@@ -396,39 +215,16 @@ travel_time_viz <- ggplot(states_2017_EDA, aes (x = travel_min_work_agg, y = inc
   geom_boxplot()
 travel_time_viz
 
-# travel_time_viz <- boxplot(travel_min_work_agg~income_bracket, 
-#         data = states_2017_EDA,
-#         main = "Travel Time to Work By Income Bracket", 
-#         xlab = "Income Bracket", 
-#         ylab = "Time Traveled to Work Aggregated", 
-#         col = "orange", 
-#         border = "brown"
-# ) 
-# travel_time_viz
-
-
-
 #making it interactive??? 
 #girafe(ggobj1 = computers_viz) %>%
   #girafe_options(opts_hover(css = "fill:blue;"))
-
-
-# states_2017_EDA %>% 
-#   group_by(income_bracket) %>%
-#   summarize(computers = sum(computer_count)) %>% 
-#   ggplot(aes(x=income_bracket, y=computer_count, fill=group)) +
-#   geom_bar(stat="identity", width=1, color="white") +
-#   coord_polar("y", start=0) +
-#   
-#   theme_void() # remove background, grid, numeric labels
-# 
-#   
 ```
 
+#Jake EDA
 ```{r EDA}
-#EDA for all states--------------------
+#EDA for all states
 
-#all states -------------
+#all states
 #means of variables for all states
 means = colMeans(states_2017[,c(variable_list)])
 barplot(means[order(means,decreasing=T)])
@@ -1118,8 +914,6 @@ states_2017 %>%
 
 ```
 
-```
-
 ## splitting the data, creating folds, and creating a recipe (that will need to get updated depending on variables used)
 ```{r - Splitting and folding and creating a recipe}
 #Set up a testing environment
@@ -1382,6 +1176,7 @@ download.file("https://www2.census.gov/geo/tiger/GENZ2017/shp/cb_2017_us_state_5
 unzip(dataFile, exdir = dataFolder)
 
 #loading in census states shape file
+#we don't use this shape file anywhere yet 
 geoCensusStates <- st_read("data/cb_2017_us_state_500k.shp") %>%
   clean_names()
 
@@ -1420,7 +1215,60 @@ p + geom_polygon(fill = "white", color = "black") +
 
 ```
 
-#Unsupervised Machine Learning Model Using States
+## Census API Query Method 2 (via a url query) to pull median income and some basic mapping exploration
+##I'll use this to create the unsupervised ml model so no deletions necessary yet 
+```{r}
+#use census API Query to get data on median household income levels in 50 states
+#i'm not really using this anywhere yet 
+#DON'T DELTE 
+url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B06011_001E&for=state:*")
+popurl <- GET(url = url)
+http_status(popurl)
+popurl <- content(popurl, as = "text")
+pop_matrix <- fromJSON(popurl)
+#turn body of character matrix into a tibble
+us_50_states <- as_tibble(pop_matrix[2:nrow(pop_matrix),],.name_repair = "minimal")
+#add variable names to the tibble
+names(us_50_states) <- us_50_states[1,]
+
+#this is just me trying to create example maps using a different type of package
+# ca_example_map <- get_acs(
+#   geography = "tract",
+#   variables = c(total_pop = "B01003_001", #total population
+#                 #income_pov = "C17002_001", #income to poverty ratio
+#                 #weeks_work_alloc = "B99234_001", #allocation of weeks worked in the past 12 months
+#                 #hours_week_work_alloc = "B99233_001", #allocation of usual hours worked per week in the past 12 months 
+#                 #travel_min_work_agg = "B08133_001", #aggregate travel time to work in minutes
+#                 #female_count = "B01001_026", #total female
+#                 #computer_count ="B28010_001", #computers in household
+#                 #female_marital_alloc = "B99131_001", #allocation of marital status for females
+#                 #travel_work = "B08303_001", #travel time to work
+#                 #education_alloc = "B99151_001", #allocation of educational attainment (number of people who have completed HS)
+#                 med_income = "B19013_001" #median income level (this is our outcome variable)
+#                 ), 
+#   output = "wide",
+#   state = states,
+#   year = 2017) # data from years 2013 - 2017
+
+us_map <- tidycensus::get_acs(
+  geography = "state", 
+  variables = c(total_pop = "B01003_001", 
+                med_income = "B19013_001"), 
+  output = "wide", 
+  state = states, 
+  geometry = TRUE, 
+  year = 2017) 
+
+plot(us_map["med_incomeE"])
+       
+#plot(ca_example_map["med_incomeE"])
+
+#this is an interactive map
+library(mapview)
+mapview(us_map, zcol = "med_incomeE")
+```
+
+#Unsupervised Machine Learning Models 
 ```{r - unsupervised clustering}
 
 ```
