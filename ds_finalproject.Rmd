@@ -274,7 +274,11 @@ travel_time_viz
 #https://money.usnews.com/money/personal-finance/family-finance/articles/where-do-i-fall-in-the-american-economic-class-system
 
 #Exploratory Data Analysis Phase 2: Understanding Variable Importance
-#In this secondary phase of data analysis, we can see that many of the variables that are of interest to us exhibit a left skew. Thus, we must find a way to mitigate the effects of this. 
+#The grid of each potential variable displays possible values of the variable and the number of census tracts at each value. The goal is to determine the potential distribution of each variable. As the grid indicates, each variable is right-skewed - median is less the mode and there is a long tail of outliers. 
+
+#The second visualization examines the correlation of the variables with one another. The only variable with a concerningly high correlation is total population. It is extremely correlated (r>.90) with total females and total computers. Total population and total female population are directly connected as for every increase in total female population there will be an increase in total population (the reverse is not necessarily true). Due to technological advancements and decreases in price, computers are widely available. Many jobs require a computer as well as school assignments, so the correlation with population and total computers is consistent. Otherwise, no correlation amongst the other variables is concerning. 
+
+#Due to the skew of the variables and the correlation amongst total population, manipulating this variable to yield relative frequencies would elminate these issues.
 ```{r EDA}
 #Distribution of Variables ------------
 summary(states_2017$med_income)
