@@ -3,11 +3,11 @@ title: "Final Project"
 author: "Sahana Srinivasan, Jake Kochmansky, Jae Gnazzo, Nathaniel Spilka"
 output: html_document
 ---
-
 # _________________________________________________
 
 # PPOL 670 | Final Project
 
+#Load Libraries
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -36,16 +36,21 @@ library(here)
 library(mapview)
 library(ggthemes)
 library(tigris)
-library(albersusa)
+#library(albersusa)
 library(ggiraph)
 library(srvyr)
 #library(Hmisc)
-
-
 ```
 
+##The question that lies at the heart of our analysis is: Using a small number of continuous variables, how accurately can our specified model predict median household income in United States Census Tracts? We believe this question to be critical in helping define salient predictors of the amount of wealth households in America are capable of accumulating. As of February 2022 per the Center of Poverty and Social Policy in Columbia University, poverty rates in the US were around 14.4%, with the expiration of Child Tax Credit (CTC) payments hastening the increase in childhood poverty rates. Thus, we believe that our question poses important implications to both short-term concerns related to the quality of life of American families as well as long-term indicators of economic growth and progress in the country at large. And, perhaps if certain unapparent variables demonstrate to have some level of predictive power over the outcome of median household income, digestable changes can be made in the lives of everyday Americans with serve to improve their lives.
+
+##To put this question to test, we adopt a combination of supervised and unsupervised machine learning methods, as well as various Exploratory Data Analysis, API Queries, and Geospatial tools to guide our data collection and decisionmaking processes. The datasets we invoke for our analysis are the American Community Survey collected from the years of 2013-2017 reflecting data on all Census Tracts in all 50 states, as well as the Childhood Opportunity Index Dataset, which gives insight on the neigborhood conditions (ie., access to recereational services andclean natural resources) of children in all census tracts. 
+
+
 #Census API Query Method 1 and Column Name Clean-Up
-```{r}
+
+#We start the exploration of our question by gathering ACS data on various variables of interest. Among these are the aggregate time spent traveling to work by individuals in a given tract, the total count of females, the number of computers, the number of individuals who have completed high school, the number of people with a GED, the number of people who have completed an associate's degree, and the number of people who have completed a bachelor's degree. 
+```{r - census API tracts}
 #Loading in API, gathering data --------------------
 #Census api key
 #Sys.getenv("CENSUS_API_KEY")
@@ -76,11 +81,12 @@ states_2017 <- get_acs(
   output = "wide",
   state = states,
   year = 2017) # data from years 2013 - 2017
-
 ```
 
+
 #Read in Childhood Opportunity Index Dataset and Join Census Data with New Dataset
-```{r}
+#Now, we read in the Childhood Opportunity Index Dataset. The variables of interest here are Z-scores of overall Childhood Opportunity Indices nationally-normed, Health and Environmental Indices nationally-normed, and education domain nationally normed. We want to join this with our previous datasets using GEOID as the common link in order to conduct a more robust analysis. 
+```{r - childhood opportunity}
 #reading in childhood opportunity data 
 child_opp_data1 <- read_csv("data/index.csv")
 
@@ -99,7 +105,6 @@ Learn more about the dataset [here](https://www.diversitydatakids.org/child-oppo
 
 ##Cleaning the states_2017 joined dataset
 ```{r - cleaning data}
-
 #this function will help us get the state from each census tract 
 stateName  <- function(input) {
   tractCountyState <- unlist(strsplit(input, ", "))
@@ -179,11 +184,14 @@ states_2017 <- states_2017 %>%
 # only_numb <- only_numb %>%
 #   filter_all(all_vars(!is.infinite(.)))
 
-
-
 ```
 
-#Sahana EDA (Some visualizations that tell the story in a slightly clearer way) 
+#Exploratory Data Analysis Phase 1: Understanding How Key Variables of Interest Interplay
+#The goal of this initial EDA is to understand the distribution of American households across income brackets specified by the [FILL IN THE BLANK], as well as gain insight into features that characterize these income brackets. 
+
+#The first vizualization titled "Number of People in the United States in Specified Income Brackets" shows us that the lower-median income bracket is the largest, with the median-upper income bracket following behind. In terms of a specific number of census tracts in each bracket, 
+
+#The final vizualization titled "" demonstrates that average aggregated travel time for members in tracts, taken as a proportion of the total individuals in the given tract, is highest for those in the median-upper income level. 
 ```{r EDA}
 #finding number of people in different income brackets
 states_2017_EDA <- states_2017 %>% 
@@ -207,28 +215,26 @@ states_2017_EDA %>%
   )
 
 #finding proportion of census tracts in specified income bracket 
-states_2017_EDA %>% 
-  mutate(lower_income = if_else(income_bracket == "Lower", 1, 0)) %>% #gen dummy variable 
-  mutate(lower_median_income =if_else(income_bracket == "Lower-Median", 1, 0)) %>%
-  mutate(median_upper_income = if_else(income_bracket == "Median-Upper",0, 1)) %>%
-  #filter(AGE>=16) %>% #remove respondents less than or equal to 16 
-  #group_by(YEAR) %>% 
-  summarize(
-    lower_income = sum(lower_income == 1), 
-    lower_median_income = sum(lower_median_income == 1), 
-    median_upper_income = sum(median_upper_income == 1)  
-  )
+# states_2017_EDA %>% 
+#   mutate(lower_income = if_else(income_bracket == "Lower", 1, 0)) %>% #gen dummy variable 
+#   mutate(lower_median_income =if_else(income_bracket == "Lower-Median", 1, 0)) %>%
+#   mutate(median_upper_income = if_else(income_bracket == "Median-Upper",1, 0)) %>%
+#   summarize(
+#     lower_income = sum(lower_income == 1), 
+#     lower_median_income = sum(lower_median_income == 1), 
+#     median_upper_income = sum(median_upper_income == 1)  
+#     )
 
 #group by income bracket - find number of computers per category 
 #lower level of computers among lower income - this bracket is underrepresented in the data comparatively speaking
-computers_viz <- ggplot(states_2017_EDA, aes(x="", y=computer_count, fill=income_bracket)) +
+computers_viz <- ggplot(states_2017_EDA, aes(x="", y=computer_count_prop, fill=income_bracket)) +
   geom_bar (width = 1, stat = "identity")
 computers_viz <- computers_viz + coord_polar("y", start=0)
 computers_viz 
 
 #group by income bracket - create a boxplot
 #maybe you should filter by in this 
-travel_time_viz <- ggplot(states_2017_EDA, aes (x = travel_min_work_agg, y = income_bracket)) + 
+travel_time_viz <- ggplot(states_2017_EDA, aes (x = travel_min_work_agg_prop, y = income_bracket)) + 
   geom_boxplot()
 travel_time_viz
 
@@ -237,7 +243,8 @@ travel_time_viz
   #girafe_options(opts_hover(css = "fill:blue;"))
 ```
 
-#Exploratory Data Analysis (EDA)
+#Exploratory Data Analysis Phase 2: Understanding Variable Importance
+
 ```{r EDA}
 #EDA for all states
 
@@ -1286,5 +1293,71 @@ mapview(us_map, zcol = "med_incomeE")
 
 #Unsupervised Machine Learning Models 
 ```{r - unsupervised clustering}
+url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B01001_026E,B28010_001E,B15003_017E, &for=tract:*&in=state:17&in=county:031")
+popurl <- GET(url = url)
+http_status(popurl)
+popurl <- content(popurl, as = "text")
+pop_matrix <- fromJSON(popurl)
+#turn body of character matrix into a tibble
+states <- as_tibble(pop_matrix[1:nrow(pop_matrix),],.name_repair = "minimal")
+names(states) <- states[1,]
+states = states[-1,]
 
+#take out na values
+states[is.na(states)] <- 0
+
+#only contains values 
+drop <- c("NAME", "state", "county","tract")
+states_numeric <- states[,!(names(states) %in% drop)]
+states_numeric[1:3] <- sapply(states_numeric[1:3], as.numeric)
+head(states_numeric)
+
+#run PCA on states_numeric
+states_pca <- prcomp(states_numeric, center = TRUE, scale. = TRUE)
+
+#how much variance explained? 
+summary(states_pca)
+
+#extract principle components
+states_pcs <- states_pca %>% 
+  .$x %>% 
+  as_tibble()
+
+#combine pc's to names
+states_pcs <- bind_cols(
+  select(states, -state), 
+  select(states_pcs, PC1, PC2)
+)
+
+#total within sum of squares to find ideal number of clusters
+fviz_nbclust(states_numeric, FUN = kmeans, method = "wss")
+#total silhouette width
+fviz_nbclust(states_numeric, FUN = kmeans, method = "silhouette")
+#gap statistic
+fviz_nbclust(states_numeric, FUN = kmeans, method = "gap_stat")
+
+num_kmeans <- function(k, data){
+  #generate k-means clusters
+  kmeans <- kmeans(states_numeric, 
+  centers = k, 
+  nstart = 100
+  );
+#create dataframe that binds together clusters and PC's
+  votes_clusters <- bind_cols(
+  select(states, NAME), 
+  select(data, PC1, PC2), 
+  cluster = kmeans$cluster
+  )
+}
+
+kmeans_2 <- num_kmeans(k = 2, data = states_pcs) 
+kmeans_2
+
+fviz_cluster(km_4, data = states_numeric)
+
+km_4 <- kmeans(states_numeric, centers = 4, nstart = 25)
+km_4
+clusters <- bind_cols( 
+  select (states, NAME), 
+  select ())
 ```
