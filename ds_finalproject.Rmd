@@ -171,11 +171,13 @@ states_2017 <- states_2017 %>%
 # dev.off()
 
 #![EDA for all variables]("/ds_finalproject/images/greatestFigure.png")
+knitr::include_graphics("office_square.jpeg")
 
 # eda_figure <- "/ds_finalproject/images/greatestFigure.png"
 # eda <- readPNG(eda_figure, native = TRUE, info = TRUE)
 # eda
 ```
+![EDA for all variables]("/ds_finalproject/images/greatestFigure.png")
 
 #Exploratory Data Analysis Phase 1: Understanding How Key Variables of Interest Interplay
 #The goal of this initial EDA is to understand the distribution of American households across income brackets specified by the US News World Report linked below, as well as gain insight into features that characterize these income brackets. 
