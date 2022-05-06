@@ -44,7 +44,7 @@ library(knitr)
 library(png)
 ```
 
-##The question that lies at the heart of our analysis is: Using a small number of continuous variables, how accurately can our specified model predict median household income in United States Census Tracts? We believe this question to be critical in helping define salient predictors of the amount of wealth households in America are capable of accumulating. As of February 2022 per the Center of Poverty and Social Policy in Columbia University, poverty rates in the US were around 14.4%, with the expiration of Child Tax Credit (CTC) payments hastening the increase in childhood poverty rates. Thus, we believe that our question poses important implications to both short-term concerns related to the quality of life of American families as well as long-term indicators of economic growth and progress in the country at large. And, perhaps if certain unapparent variables demonstrate to have some level of predictive power over the outcome of median household income, digestable changes can be made in the lives of everyday Americans with serve to improve their lives.
+##The question that lies at the heart of our analysis is: Using a small number of continuous variables, how accurately can our specified model predict median household income in United States Census Tracts? We believe this question to be critical in helping define salient predictors of the amount of wealth households in America are capable of accumulating. As of February 2022 per the Center of Poverty and Social Policy in Columbia University, poverty rates in the US were around 14.4%, with the phase out of Child Tax Credit (CTC) payments hastening the increase in childhood poverty rates. Thus, we believe that our question poses important implications to both short-term concerns related to the quality of life of American families as well as long-term indicators of economic growth and progress in the country at large. And, perhaps if certain unapparent variables demonstrate to have some level of predictive power over the outcome of median household income, digestable changes can be made in the lives of everyday Americans with serve to improve their lives.
 
 ##To put this question to test, we adopt a combination of supervised and unsupervised machine learning methods, as well as various Exploratory Data Analysis, API Queries, and Geospatial tools to guide our data collection and decisionmaking processes. Git and its version control capabilities were also crucial to our ability to work effectively in tandem as a group.The datasets we invoke for our analysis are the American Community Survey collected from the years of 2013-2017 reflecting data on all Census Tracts in all 50 states, as well as the Childhood Opportunity Index Dataset, which gives insight on the neigborhood conditions (ie., access to recereational services andclean natural resources) of children in all census tracts. 
 
@@ -637,44 +637,8 @@ map_US_Interactive2 %>%
 
 ```
 
-
-## Census API Query Method 2 (via a url query) to pull median income and some basic mapping exploration
-##I'll use this to create the unsupervised ml model so no deletions necessary yet 
-```{r}
-# #use census API Query to get data on median household income levels in 50 states
-# #i'm not really using this anywhere yet 
-# #DON'T DELTE 
-# url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B06011_001E&for=state:*")
-# popurl <- GET(url = url)
-# http_status(popurl)
-# popurl <- content(popurl, as = "text")
-# pop_matrix <- fromJSON(popurl)
-# #turn body of character matrix into a tibble
-# us_50_states <- as_tibble(pop_matrix[2:nrow(pop_matrix),],.name_repair = "minimal")
-# #add variable names to the tibble
-# names(us_50_states) <- us_50_states[1,]
-# 
-# us_map <- tidycensus::get_acs(
-#   geography = "state", 
-#   variables = c(total_pop = "B01003_001", 
-#                 med_income = "B19013_001"), 
-#   output = "wide", 
-#   state = states, 
-#   geometry = TRUE, 
-#   year = 2017) 
-# 
-# plot(us_map["med_incomeE"])
-#        
-# #plot(ca_example_map["med_incomeE"])
-# 
-# #this is an interactive map
-# library(mapview)
-# mapview(us_map, zcol = "med_incomeE")
-```
-
 ##Kmeans
 ###We conclude our analysis by running K-means of variables selected from our previous models that best predicted median household income. The variables we selected are computer_count, bach_count, travel_min_work_agg, and hs_count. For this method, we are simply looking to conduct K-mean clustering of all 50 states, Puerto Rico, and Washington, DC, by their principle componenents, as referenced by their principle components. We found the ideal number of clusters to be 2 from our sum of squares, silhouette, and gap-stat visualizations. Our first plot shows each of the states alongside a color matrix of their corresponding states. This is a helpful representation of the general displacement of each state. In our second plot, we see two distinct clusters, coded as red and blue. The majority of our states fall within the first cluster (red), while California, New York, Texas, and Florida fall within our second cluster (blue). As it pertains to median household income...
-
 #Unsupervised Machine Learning Models 
 ```{r - unsupervised clustering}
 url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B28010_001E,B15003_022E,B08133_001E,B15003_017E,B19013_001E&for=state:*")
@@ -775,3 +739,9 @@ states_med <- states_med %>%
 
 states_med$median_income <- as.numeric(states_med$median_income)
 ```
+
+##The broad takeaway of our analysis is that Childhood Opportunity Indices and educational attainment indicators in adolescence and adulthood play an almost certain role in determining the median household income level of households. In a similar vein, technological indicators, like access to computers or means of transportation, also have some explanatory power over income. When applying our most robust indictors from our supervised machine learning models to an unsupervised model relating to states within the US, the extent to which the categorization of states extends to an explanation of median household income level is questionable. Thus, perhaps there are more robust indicators that would be better suited for predicting median household income, and the question of what these are would be the focus of further exploration. For the sake of this project, it is evident that a small number of continuous variables can indeed be used to predict median household income to an extent, but defining exactly what these are will require extensive research. 
+
+##Through the process of data analysis, we encountered many challenges. First and foremost, parsing through the ACS dataset and obtaining variables was somewhat difficult due to the structure of the data as well as the sheer size of it. Though we had categories of variables in mind that we wanted to include in our models, it is possible that we neglected to include certain variables that would have had a more meaningful impact on our analysis. Thankfully, we partially mitigated this limitation in part by adding a second dataset to our analysis, which turned out to contain the most important predictor variable across all three supervised machine learning models. We also had to occasionally make judgement calls within our recipe on variables that would be better off logged 
+
+##Furthermore, the RMSE values in our models were not as robust as we would have liked to see. Simply put, our error rates do not appear low enough to justify real-world implementation of our models. With that said, we have nonetheless gained insight into the types of variables that appear to be important in any analysis related to income. 
