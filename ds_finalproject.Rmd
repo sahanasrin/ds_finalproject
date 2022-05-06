@@ -83,7 +83,6 @@ states_2017 <- get_acs(
   year = 2017) # data from years 2013 - 2017
 ```
 
-
 #Read in Childhood Opportunity Index Dataset and Join Census Data with New Dataset
 #Now, we read in the Childhood Opportunity Index Dataset. The variables of interest here are Z-scores of overall Childhood Opportunity Indices nationally-normed, Health and Environmental Indices nationally-normed, and education domain nationally normed. We want to join this with our previous datasets using GEOID as the common link in order to conduct a more robust analysis. 
 ```{r - childhood opportunity}
@@ -171,8 +170,12 @@ states_2017 <- states_2017 %>%
 
 #The first vizualization titled "Number of People in the United States Living in Tracts with Specified Income Brackets" shows us that the number of people living in a middle class census tract is the highest, with the lower middle class bracket following behind. Bearing in mind that this does not give insight into the actual number of people in each of these income brackets, it tells us that the majority of Americans are residing in what can be known as "middle-class America." In terms of a specific number of census tracts in each bracket, we observe that 384 fall in Poor, 2494 fall in Lower-Middle Class, 6787 fall in Middle Class, and 114 fall in upper class. Finding ways to grow the middle-class, given that nearly 3,000 tracts fall below it, is crucial.
 
-#The final vizualization titled "" demonstrates that average aggregated travel time for members in tracts, taken as a proportion of the total individuals in the given tract, is highest for those in the median-upper income level. 
-```{r EDA}
+#The second vizualization (a boxplot) titled "Proportional of Females in Census Tracts by Income Bracket" shows us that the average proportion of females is roughly the same acorss each income bracket, which is telling that it will likely not be a useful predictive variable in predicting median household income levels in a given census tract. On the other hand, the average proportion of bachelor degrees appears to noticeably vary across income brackets across income brackets, with those in the upper income bracket having a significantly higher amount than those in the lower. 
+
+#The final vizualization (a boxplot) titled "Proportional Agg. Time Traveled To Work in Census Tracts by Income Bracket" demonstrates that average aggregated travel time for members in tracts, taken as a proportion of the total individuals in the given tract, is highest for those in the upper income level and lowest for those in the poorest income level. This tell us that those who are poor likely lack the facilities to travel for work, and therefore take jobs closer to their homes that would necessitate a lesser commute.
+
+#Broadly speaking, this initial phase of analysis tell us that transporation and education related variables are more important than gender related variables in determining income outcomes. 
+```{r - EDA Part 1}
 #finding number of people in different census tract income brackets
 states_2017_EDA <- states_2017 %>% 
   mutate(
@@ -184,8 +187,8 @@ states_2017_EDA <- states_2017 %>%
   )
 
 #creating a barplot depicting distribution of people across income brackets
-states_2017_EDA %>%
-  ggplot(mapping = aes(x = income_bracket, y = total_pop)) + 
+income_bracket_viz <- states_2017_EDA %>%
+  ggplot(mapping = aes(x = income_bracket, y = total_pop, color = income_bracket)) + 
   geom_col() +
   labs(
     title = "Number of People in the United States in Tracts by Specified Income Brackets", 
@@ -196,8 +199,10 @@ states_2017_EDA %>%
   ) + 
    scale_x_discrete(limits = c("Poor-Near Poor", "Lower-Middle Class", "Middle Class", "Upper"))
 
+income_bracket_viz 
+
 #finding number of census tracts in specified income bracket
-states_2017_EDA %>%
+income_bracket_table <- states_2017_EDA %>%
   mutate(poor = if_else(income_bracket == "Poor-Near Poor", 1, 0)) %>% #gen dummy variable
   mutate(lower_middle =if_else(income_bracket == "Lower-Middle Class", 1, 0)) %>%
   mutate(middle = if_else(income_bracket == "Middle Class",1, 0)) %>%
@@ -209,27 +214,55 @@ states_2017_EDA %>%
   upper = sum(upper == 1)
  )
 
-#group by income bracket - find number of computers per category 
-#lower level of computers among lower income - this bracket is underrepresented in the data comparatively speaking
-computers_viz <- ggplot(states_2017_EDA, aes(x="", y=computer_count_prop, fill=income_bracket)) +
-  geom_bar (width = 1, stat = "identity")
-computers_viz <- computers_viz + coord_polar("y", start=0)
-computers_viz 
+income_bracket_table
 
-#group by income bracket - create a boxplot
-#maybe you should filter by in this 
-travel_time_viz <- ggplot(states_2017_EDA, aes (x = travel_min_work_agg_prop, y = income_bracket)) + 
-  geom_boxplot()
+#creating a boxplot showing proportion of females in specified income brackets
+female_count_viz <- ggplot(states_2017_EDA, aes (x = female_count_prop, y = income_bracket, color = income_bracket)) + 
+  geom_boxplot() + 
+   labs(
+    title = "Proportional of Females in Census Tracts by Income Bracket", 
+    subtitle = "Gender Relevant Information on Income Brackets", 
+    x = "Proportion of Females", 
+    y = "Income Bracket", 
+    caption = "ACS 5 Year Survey"
+  ) + 
+  scale_y_discrete(limits = c("Poor-Near Poor", "Lower-Middle Class", "Middle Class", "Upper")) 
+  
+female_count_viz
+
+#creating a boxplot showing proportion of bachelor degree attainment in specified income brackets
+bach_count_viz <- ggplot(states_2017_EDA, aes (x = bach_count_prop, y = income_bracket, color = income_bracket)) + 
+  geom_boxplot() + 
+   labs(
+    title = "Proportional of Bachelor Degrees in Census Tracts by Income Bracket", 
+    subtitle = "Education Relevant Information on Income Brackets", 
+    x = "Proportion of Bachelor Degrees", 
+    y = "Income Bracket", 
+    caption = "ACS 5 Year Survey"
+  ) + 
+  scale_y_discrete(limits = c("Poor-Near Poor", "Lower-Middle Class", "Middle Class", "Upper")) 
+  
+bach_count_viz
+
+
+#creating a boxplot depicting travel times to work by income bracket
+travel_time_viz <- ggplot(states_2017_EDA, aes (x = travel_min_work_agg_prop, y = income_bracket, color = income_bracket)) + 
+  geom_boxplot() + 
+   labs(
+    title = "Proportional Agg. Time Traveled To Work in Census Tracts by Income Bracket", 
+    subtitle = "Transportation Relevant Information on Income Brackets", 
+    x = "Proportional Aggregate Time Traveled", 
+    y = "Income Bracket", 
+    caption = "ACS 5 Year Survey"
+  ) + 
+  scale_y_discrete(limits = c("Poor-Near Poor", "Lower-Middle Class", "Middle Class", "Upper")) 
+  
 travel_time_viz
-
-#making it interactive??? 
-#girafe(ggobj1 = computers_viz) %>%
-  #girafe_options(opts_hover(css = "fill:blue;"))
 ```
 #https://money.usnews.com/money/personal-finance/family-finance/articles/where-do-i-fall-in-the-american-economic-class-system
 
 #Exploratory Data Analysis Phase 2: Understanding Variable Importance
-
+#In this secondary phase of data analysis, we can see that many of the variables that are of interest to us exhibit a left skew. Thus, we must find a way to mitigate the effects of this. 
 ```{r EDA}
 #Distribution of Variables ------------
 summary(states_2017$med_income)
