@@ -7,9 +7,11 @@ output: html_document
 
 # PPOL 670 | Final Project
 
-#Load Libraries
+##Load Libraries
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
 
 #code for clearing up workspace
 rm(list = ls(all.names = TRUE))
@@ -44,14 +46,14 @@ library(knitr)
 library(png)
 ```
 
-##The question that lies at the heart of our analysis is: Using a small number of continuous variables, how accurately can our specified model predict median household income in United States Census Tracts? We believe this question to be critical in helping define salient predictors of the amount of wealth households in America are capable of accumulating. As of February 2022 per the Center of Poverty and Social Policy in Columbia University, poverty rates in the US were around 14.4%, with the phase out of Child Tax Credit (CTC) payments hastening the increase in childhood poverty rates. Thus, we believe that our question poses important implications to both short-term concerns related to the quality of life of American families as well as long-term indicators of economic growth and progress in the country at large. And, perhaps if certain unapparent variables demonstrate to have some level of predictive power over the outcome of median household income, digestable changes can be made in the lives of everyday Americans with serve to improve their lives.
+The question that lies at the heart of our analysis is: Using a small number of continuous variables, how accurately can our specified model predict median household income in United States Census Tracts? We believe this question to be critical in helping define salient predictors of the amount of wealth households in America are capable of accumulating. As of February 2022 per the Center of Poverty and Social Policy in Columbia University, poverty rates in the US were around 14.4%, with the phase out of Child Tax Credit (CTC) payments hastening the increase in childhood poverty rates. Thus, we believe that our question poses important implications to both short-term concerns related to the quality of life of American families as well as long-term indicators of economic growth and progress in the country at large. And, perhaps if certain unapparent variables demonstrate to have some level of predictive power over the outcome of median household income, digestable changes can be made in the lives of everyday Americans with serve to improve their lives.
 
-##To put this question to test, we adopt a combination of supervised and unsupervised machine learning methods, as well as various Exploratory Data Analysis, API Queries, and Geospatial tools to guide our data collection and decisionmaking processes. Git and its version control capabilities were also crucial to our ability to work effectively in tandem as a group.The datasets we invoke for our analysis are the American Community Survey collected from the years of 2013-2017 reflecting data on all Census Tracts in all 50 states, as well as the Childhood Opportunity Index Dataset, which gives insight on the neigborhood conditions (ie., access to recereational services andclean natural resources) of children in all census tracts. 
+To put this question to test, we adopt a combination of supervised and unsupervised machine learning methods, as well as various Exploratory Data Analysis, API Queries, and Geospatial tools to guide our data collection and decisionmaking processes. Git and its version control capabilities were also crucial to our ability to work effectively in tandem as a group.The datasets we invoke for our analysis are the American Community Survey collected from the years of 2013-2017 reflecting data on all Census Tracts in all 50 states, as well as the Childhood Opportunity Index Dataset, which gives insight on the neigborhood conditions (ie., access to recereational services andclean natural resources) of children in all census tracts. 
 
 
-#Census API Query Method 1 and Column Name Clean-Up
+##Census API Query Method 1 and Column Name Clean-Up
 
-#We start the exploration of our question by gathering ACS data on various variables of interest. Among these are the aggregate time spent traveling to work by individuals in a given tract, the total count of females, the number of computers, the number of individuals who have completed high school, the number of people with a GED, the number of people who have completed an associate's degree, and the number of people who have completed a bachelor's degree. 
+We start the exploration of our question by gathering ACS data on various variables of interest. Among these are the aggregate time spent traveling to work by individuals in a given tract, the total count of females, the number of computers, the number of individuals who have completed high school, the number of people with a GED, the number of people who have completed an associate's degree, and the number of people who have completed a bachelor's degree. 
 ```{r - census API tracts}
 #Loading in API, gathering data --------------------
 #Census api key
@@ -85,8 +87,8 @@ states_2017 <- get_acs(
   year = 2017) # data from years 2013 - 2017
 ```
 
-#Read in Childhood Opportunity Index Dataset and Join Census Data with New Dataset
-#Now, we read in the Childhood Opportunity Index Dataset. The variables of interest here are Z-scores of overall Childhood Opportunity Indices nationally-normed, Health and Environmental Indices nationally-normed, and education domain nationally normed. We want to join this with our previous datasets using GEOID as the common link in order to conduct a more robust analysis. 
+##Read in Childhood Opportunity Index Dataset and Join Census Data with New Dataset
+Now, we read in the Childhood Opportunity Index Dataset. The variables of interest here are Z-scores of overall Childhood Opportunity Indices nationally-normed, Health and Environmental Indices nationally-normed, and education domain nationally normed. We want to join this with our previous datasets using GEOID as the common link in order to conduct a more robust analysis. 
 ```{r - childhood opportunity}
 #reading in childhood opportunity data 
 child_opp_data1 <- read_csv("data/index.csv")
@@ -159,32 +161,19 @@ states_2017 <- states_2017 %>%
       assoc_count_prop = assoc_count/total_pop,
       bach_count_prop = bach_count/total_pop,
       education_alloc_prop = education_alloc/total_pop)
-
-#here's the dataframe we'll use for the model
-# only_numb <- states_2017 %>%
-#   select(med_income, total_pop, ends_with("prop"), starts_with("z"))
-# library(Hmisc)
-# tiff("test.tiff", units="in", width=5, height=5, res=300)
-#it looks like we should center some variables, but not log everything
-#we need to log GED
-# hist.data.frame(only_numb)
-# dev.off()
-
-eda_variables <- knitr::include_graphics("/Users/sahanasrin/Desktop/IMG_6164.jpeg")
-eda_variables
 ```
-![EDA for all variables]("/ds_finalproject/images/greatestFigure.png")
+##Exploratory Data Analysis Phase 1: Understanding How Key Variables of Interest Interplay
+The goal of this initial EDA is to understand the distribution of American households across income brackets specified by the US News World Report linked below, as well as gain insight into features that characterize these income brackets. 
 
-#Exploratory Data Analysis Phase 1: Understanding How Key Variables of Interest Interplay
-#The goal of this initial EDA is to understand the distribution of American households across income brackets specified by the US News World Report linked below, as well as gain insight into features that characterize these income brackets. 
+The first vizualization titled "Number of People in the United States Living in Tracts with Specified Income Brackets" shows us that the number of people living in a middle class census tract is the highest, with the lower middle class bracket following behind. Bearing in mind that this does not give insight into the actual number of people in each of these income brackets, it tells us that the majority of Americans are residing in what can be known as "middle-class America." In terms of a specific number of census tracts in each bracket, we observe that 384 fall in Poor, 2494 fall in Lower-Middle Class, 6787 fall in Middle Class, and 114 fall in upper class. Finding ways to grow the middle-class, given that nearly 3,000 tracts fall below it, is crucial.
 
-#The first vizualization titled "Number of People in the United States Living in Tracts with Specified Income Brackets" shows us that the number of people living in a middle class census tract is the highest, with the lower middle class bracket following behind. Bearing in mind that this does not give insight into the actual number of people in each of these income brackets, it tells us that the majority of Americans are residing in what can be known as "middle-class America." In terms of a specific number of census tracts in each bracket, we observe that 384 fall in Poor, 2494 fall in Lower-Middle Class, 6787 fall in Middle Class, and 114 fall in upper class. Finding ways to grow the middle-class, given that nearly 3,000 tracts fall below it, is crucial.
+The second vizualization (a boxplot) titled "Proportional of Females in Census Tracts by Income Bracket" shows us that the average proportion of females is roughly the same acorss each income bracket, which is telling that it will likely not be a useful predictive variable in predicting median household income levels in a given census tract. On the other hand, the average proportion of bachelor degrees appears to noticeably vary across income brackets across income brackets, with those in the upper income bracket having a significantly higher amount than those in the lower. 
 
-#The second vizualization (a boxplot) titled "Proportional of Females in Census Tracts by Income Bracket" shows us that the average proportion of females is roughly the same acorss each income bracket, which is telling that it will likely not be a useful predictive variable in predicting median household income levels in a given census tract. On the other hand, the average proportion of bachelor degrees appears to noticeably vary across income brackets across income brackets, with those in the upper income bracket having a significantly higher amount than those in the lower. 
+The final vizualization (a boxplot) titled "Proportional Agg. Time Traveled To Work in Census Tracts by Income Bracket" demonstrates that average aggregated travel time for members in tracts, taken as a proportion of the total individuals in the given tract, is highest for those in the upper income level and lowest for those in the poorest income level. This tell us that those who are poor likely lack the facilities to travel for work, and therefore take jobs closer to their homes that would necessitate a lesser commute.
 
-#The final vizualization (a boxplot) titled "Proportional Agg. Time Traveled To Work in Census Tracts by Income Bracket" demonstrates that average aggregated travel time for members in tracts, taken as a proportion of the total individuals in the given tract, is highest for those in the upper income level and lowest for those in the poorest income level. This tell us that those who are poor likely lack the facilities to travel for work, and therefore take jobs closer to their homes that would necessitate a lesser commute.
+Broadly speaking, this initial phase of analysis tell us that transporation and education related variables are more important than gender related variables in determining income outcomes. 
 
-#Broadly speaking, this initial phase of analysis tell us that transporation and education related variables are more important than gender related variables in determining income outcomes. 
+##EDA Part 1
 ```{r - EDA Part 1}
 #finding number of people in different census tract income brackets
 states_2017_EDA <- states_2017 %>% 
@@ -269,14 +258,16 @@ travel_time_viz <- ggplot(states_2017_EDA, aes (x = travel_min_work_agg_prop, y 
   
 travel_time_viz
 ```
-#https://money.usnews.com/money/personal-finance/family-finance/articles/where-do-i-fall-in-the-american-economic-class-system
+https://money.usnews.com/money/personal-finance/family-finance/articles/where-do-i-fall-in-the-american-economic-class-system
 
-#Exploratory Data Analysis Phase 2: Understanding Variable Importance
-#The grid of each potential variable displays possible values of the variable and the number of census tracts at each value. The goal is to determine the potential distribution of each variable. As the grid indicates, each variable is right-skewed - median is less the mode and there is a long tail of outliers. 
+##Exploratory Data Analysis Phase 2: Understanding Variable Importance
+The grid of each potential variable displays possible values of the variable and the number of census tracts at each value. The goal is to determine the potential distribution of each variable. As the grid indicates, each variable is right-skewed - median is less the mode and there is a long tail of outliers. 
 
-#The second visualization examines the correlation of the variables with one another. The only variable with a concerningly high correlation is total population. It is extremely correlated (r>.90) with total females and total computers. Total population and total female population are directly connected as for every increase in total female population there will be an increase in total population (the reverse is not necessarily true). Due to technological advancements and decreases in price, computers are widely available. Many jobs require a computer as well as school assignments, so the correlation with population and total computers is consistent. Otherwise, no correlation amongst the other variables is concerning. 
+The second visualization examines the correlation of the variables with one another. The only variable with a concerningly high correlation is total population. It is extremely correlated (r>.90) with total females and total computers. Total population and total female population are directly connected as for every increase in total female population there will be an increase in total population (the reverse is not necessarily true). Due to technological advancements and decreases in price, computers are widely available. Many jobs require a computer as well as school assignments, so the correlation with population and total computers is consistent. Otherwise, no correlation amongst the other variables is concerning. 
 
-#Due to the skew of the variables and the correlation amongst total population, manipulating this variable to yield relative frequencies would elminate these issues.
+Due to the skew of the variables and the correlation amongst total population, manipulating this variable to yield relative frequencies would elminate these issues.
+
+##EDA Part 2
 ```{r EDA}
 #Distribution of Variables ------------
 summary(states_2017$med_income)
@@ -286,15 +277,6 @@ p1 <- states_2017 %>%
   labs(x = "Median Income",
        y = "Count",
   )
-
-#summary(states_2017$travel_work)
-#p2 <- states_2017 %>%
-  #ggplot(aes(travel_work)) +
-  #geom_freqpoly(binwidth = 60)
-  #labs(x = "Average Seconds Traveled to Work",
-       #y = "Count",
-       #title = "Distribtion of Travel Time by Census Tract"
-  #)
 
 summary(states_2017$travel_min_work_agg)
 p3 <- states_2017 %>%
@@ -373,12 +355,23 @@ pairs(data = states_2017,
       lower.panel = grid_corr,
       upper.panel = upper_grid)
 
+#here's the dataframe we'll use for the model
+# only_numb <- states_2017 %>%
+#   select(med_income, total_pop, ends_with("prop"), starts_with("z"))
+# library(Hmisc)
+# tiff("test.tiff", units="in", width=5, height=5, res=300)
+#it looks like we should center some variables, but not log everything
+#we need to log GED
+# hist.data.frame(only_numb)
+# dev.off()
 
-    #Citation for correlation grid: http://www.sthda.com/english/wiki/scatter-plot-matrices-r-base-graphs
+eda_variables <- knitr::include_graphics("/Users/sahanasrin/Desktop/IMG_6164.jpeg")
+eda_variables
+
 ```
 
 ##Preparing for Supervised Machine Learning Models
-#Now, our aim is to run various supervised machine learning models in order to gauge the efficacy of our specified predictors in determining median household income levels. In order to do so, we rely upon v-fold cross validation techniques and a recipe that is carefully crafted to match the needs and limitations of our data. 
+Now, our aim is to run various supervised machine learning models in order to gauge the efficacy of our specified predictors in determining median household income levels. In order to do so, we rely upon v-fold cross validation techniques and a recipe that is carefully crafted to match the needs and limitations of our data. 
 ```{r - Splitting and folding and creating a recipe}
 #Set up a testing environment
 #set the seed and split the data
@@ -405,15 +398,10 @@ states_2017_rec <- recipe(med_income ~ ., data = states_2017_train) %>%
   step_log(ged_count_prop) %>%
   #centers our variables but not the z-scored ones
   step_center(all_predictors(), -starts_with("z_")) 
-
-# %>%
-#   prep()
-# temp <- bake(states_2017_rec, new_data = NULL)
-
 ```
 
 ##Linear Regression Model 
-##We begin with a linear regression model. Our RMSE from this model is reasonably high at around 13,370, which given the range of our median household income level data from 7232 to 250001, is not extremely high but certainly higher than we would like to observe. This means that the error in the model in predicting our data is by 13,370 dollars, which is not necessarily indicative of the type of predictive robustness we would like to observe.In this model, the variable z_coi_nat appears to have the highest level of importance, with computer_count_prop falling closely behind.  
+We begin with a linear regression model. Our RMSE from this model is reasonably high at around 13,370, which given the range of our median household income level data from 7232 to 250001, is not extremely high but certainly higher than we would like to observe. This means that the error in the model in predicting our data is by 13,370 dollars, which is not necessarily indicative of the type of predictive robustness we would like to observe.In this model, the variable z_coi_nat appears to have the highest level of importance, with computer_count_prop falling closely behind.  
 ```{r - linear regression model}
 #setting the linear reg model
 lm_mod <- linear_reg() %>%
@@ -467,8 +455,9 @@ lm_fit %>%
 summary(states_2017$med_income)
 ```
 
+
 ##K nearest neighbors model
-##We follow with a K nearest neighbors model to see if a non-parametric approach will yield a stronger RMSE value. However, our RMSE from this model is higher than the the RMSE yielded from the linear model - at around 13,425. This value is also not ideal.
+We follow with a K nearest neighbors model to see if a non-parametric approach will yield a stronger RMSE value. However, our RMSE from this model is higher than the the RMSE yielded from the linear model - at around 13,425. This value is also not ideal.
 ```{r - Exercise 02: knn model}
 knn_mod <- nearest_neighbor(neighbors = 5) %>%
   set_engine(engine = "kknn") %>%
@@ -517,11 +506,10 @@ collect_metrics(knn_res) %>%
   filter(.metric == "rmse") %>%
   select(mean) %>%
   pull(mean)
-
 ```
 
 ##Random forest model
-##We conclude with a Random forest model. This aproach averages the estimates from many independent trees. Specifically, this model use 1000 trees, applies a tuning grid to use stronger mtry and min_n values, and uses a regression framework. The RMSE yielded this model was lowest, at 11,193 (and 5582.86 on the testing data). Although this model is our strongest, we discuss methods of improvement in the limitations section.
+We conclude with a Random forest model. This aproach averages the estimates from many independent trees. Specifically, this model use 1000 trees, applies a tuning grid to use stronger mtry and min_n values, and uses a regression framework. The RMSE yielded this model was lowest, at 11,193 (and 5582.86 on the testing data). Although this model is our strongest, we discuss methods of improvement in the limitations section.
 ```{r - Exercise 02: random forest model}
 treeNumb <- 1000
 gridVal <- 10
@@ -571,11 +559,9 @@ collect_metrics(rf_fit_rs) %>%
 rf_last_fit %>%
   extract_fit_parsnip() %>%
   vip(num_features = 10)
-
-
 ```
 
-## Prediction 
+##Prediction 
 ```{r - prediction for linear regression}
 #making a prediction
 predictions_testing <- bind_cols(states_2017_test,
@@ -589,7 +575,7 @@ rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate =
 
 ```
 
-# Map figure 1
+##Map figure 1
 ```{r}
 #recruiting the testing data for the map figure
 predictedData <- predictions_testing %>%
@@ -634,7 +620,7 @@ girafe(ggobj = map1) %>%
 
 ```
 
-# Map figure 2
+##Map figure 2
 ```{r}
 map_US_Interactive2 <- map_US_inc %>%
   select(name, median_inc, predicted_inc, mean_coi, mean_he, mean_ed)
@@ -645,10 +631,9 @@ map_US_Interactive2 %>%
           map.types = c("CartoDB.Voyager","Esri.NatGeoWorldMap","Esri.WorldPhysical"))
 
 ```
+##Unsupervised Machine Learning Models 
+We conclude our analysis by running K-means of variables selected from our previous models that best predicted median household income. The variables we selected are computer_count, bach_count, travel_min_work_agg, and hs_count. For this method, we are simply looking to conduct K-mean clustering of all 50 states, Puerto Rico, and Washington, DC, by their principle componenents, as referenced by their principle components. We found the ideal number of clusters to be 2 from our sum of squares, silhouette, and gap-stat visualizations. Our first plot shows each of the states alongside a color matrix of their corresponding states. This is a helpful representation of the general displacement of each state. In our second plot, we see two distinct clusters, coded as red and blue. The majority of our states fall within the first cluster (red), while California, New York, Texas, and Florida fall within our second cluster (blue). As it pertains to median household income, we did not find our clustering properly reflects closesness in household median income.
 
-##Kmeans
-###We conclude our analysis by running K-means of variables selected from our previous models that best predicted median household income. The variables we selected are computer_count, bach_count, travel_min_work_agg, and hs_count. For this method, we are simply looking to conduct K-mean clustering of all 50 states, Puerto Rico, and Washington, DC, by their principle componenents, as referenced by their principle components. We found the ideal number of clusters to be 2 from our sum of squares, silhouette, and gap-stat visualizations. Our first plot shows each of the states alongside a color matrix of their corresponding states. This is a helpful representation of the general displacement of each state. In our second plot, we see two distinct clusters, coded as red and blue. The majority of our states fall within the first cluster (red), while California, New York, Texas, and Florida fall within our second cluster (blue). As it pertains to median household income...
-#Unsupervised Machine Learning Models 
 ```{r - unsupervised clustering}
 url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B28010_001E,B15003_022E,B08133_001E,B15003_017E,B19013_001E&for=state:*")
 popurl <- GET(url = url)
@@ -747,10 +732,12 @@ states_med <- states_med %>%
   rename(median_income = "B19013_001E")
 
 states_med$median_income <- as.numeric(states_med$median_income)
+
+states_med
 ```
 
-##The broad takeaway of our analysis is that Childhood Opportunity Indices and educational attainment indicators in adolescence and adulthood play an almost certain role in determining the median household income level of households. In a similar vein, technological indicators, like access to computers or means of transportation, also have some explanatory power over income. When applying our most robust indictors from our supervised machine learning models to an unsupervised model relating to states within the US, the extent to which the categorization of states extends to an explanation of median household income level is questionable. Thus, perhaps there are more robust indicators that would be better suited for predicting median household income, and the question of what these are would be the focus of further exploration. For the sake of this project, it is evident that a small number of continuous variables can indeed be used to predict median household income to an extent, but defining exactly what these are will require extensive research. 
+The broad takeaway of our analysis is that Childhood Opportunity Indices and educational attainment indicators in adolescence and adulthood play an almost certain role in determining the median household income level of households. In a similar vein, technological indicators, like access to computers or means of transportation, also have some explanatory power over income. When applying our most robust indictors from our supervised machine learning models to an unsupervised model relating to states within the US, the extent to which the categorization of states extends to an explanation of median household income level is questionable. Thus, perhaps there are more robust indicators that would be better suited for predicting median household income, and the question of what these are would be the focus of further exploration. For the sake of this project, it is evident that a small number of continuous variables can indeed be used to predict median household income to an extent, but defining exactly what these are will require extensive research. 
 
-##Through the process of data analysis, we encountered many challenges. First and foremost, parsing through the ACS dataset and obtaining variables was somewhat difficult due to the structure of the data as well as the sheer size of it. Though we had categories of variables in mind that we wanted to include in our models, it is possible that we neglected to include certain variables that would have had a more meaningful impact on our analysis. Thankfully, we partially mitigated this limitation in part by adding a second dataset to our analysis, which turned out to contain the most important predictor variable across all three supervised machine learning models. We also had to occasionally make judgement calls within our recipe on variables that would be better off logged 
+Through the process of data analysis, we encountered many challenges. First and foremost, parsing through the ACS dataset and obtaining variables was somewhat difficult due to the structure of the data as well as the sheer size of it. Though we had categories of variables in mind that we wanted to include in our models, it is possible that we neglected to include certain variables that would have had a more meaningful impact on our analysis. Thankfully, we partially mitigated this limitation in part by adding a second dataset to our analysis, which turned out to contain the most important predictor variable across all three supervised machine learning models. We also had to occasionally make judgement calls within our recipe on variables that would be better off logged 
 
-##Furthermore, the RMSE values in our models were not as robust as we would have liked to see. Simply put, our error rates do not appear low enough to justify real-world implementation of our models. With that said, we have nonetheless gained insight into the types of variables that appear to be important in any analysis related to income. 
+Furthermore, the RMSE values in our models were not as robust as we would have liked to see. Simply put, our error rates do not appear low enough to justify real-world implementation of our models. With that said, we have nonetheless gained insight into the types of variables that appear to be important in any analysis related to income. 
