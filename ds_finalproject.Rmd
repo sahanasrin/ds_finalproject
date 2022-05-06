@@ -1167,95 +1167,65 @@ rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate =
 
 ```
 
-## geospatial/advanced data viz
-```{r}
 
-#load in income data from census - we won't need this once we finalize the earlier sections
-map_inc <- tidycensus::get_acs(
-  geography = "state", 
-  variables = c(med_income = "B19013_001"), 
-  output = "wide", 
-  year = 2017) %>%
-  janitor::clean_names() %>%
-  select(med_income_e, name)
+
+# Map figure 1
+```{r}
+#recruiting the testing data for the map figure
+predictedData <- predictions_testing %>%
+  select(-name, -pop, -msaname15) %>%
+  group_by(state_name) %>%
+  summarise(
+    mean_coi = round(mean(z_coi_nat), 3),
+    mean_he = round(mean(z_he_nat), 3),
+    mean_ed = round(mean(z_ed_nat), 3),
+    median_inc = median(med_income),
+    predicted_inc = round(median(.pred), 0)) %>%
+  ungroup()
 
 #loading in the mad that looks best and removing all population-related columns
 map_US <- usa_sf("lcc") %>%
-  select(-starts_with("pop")) 
+  select(-starts_with("pop")) %>%
+  mutate(state_name = name)
 
 #here we're fusung the income and state data - this won't be needed later on
-map_US_inc <- left_join(map_US, map_inc, by = "name")
+map_US_inc <- left_join(map_US, predictedData, by = "state_name")
 
 #this is where we'll put all relevant data that will appear when we hover over a state
 map_US_inc <- map_US_inc %>% 
-  mutate(median_income = med_income_e,
-         hoverText = paste0("State: ", as.character(name), "\n", 
-                            "Median Income: ", as.character(median_income), "\n", 
-                            "Predicted Median Income: ", as.character(census_area), "\n",
-                            "COI z-score: ", as.character(iso_3166_2), "\n",
-                            "Health z-score: ", as.character(fips_state)))
+  mutate(median_income = median_inc,
+         hoverText = paste0("State: ", as.character(state_name), "\n", 
+                            "Median Income: $", as.character(median_inc), "\n", 
+                            "Predicted Median Income: $", as.character(predicted_inc), "\n",
+                            "Mean COI z-score: ", as.character(mean_coi), "\n",
+                            "Mean Health z-score: ", as.character(mean_he)))
 
 #here's the figure - we can come back and make it look prettier if needed
 map1 <- map_US_inc %>%
   ggplot() +
   geom_sf_interactive(size = 0.2, color = "white", aes(fill = median_income,
     data_id = hoverText, tooltip = hoverText)) +
-  labs(fill='Median Income') +
-  theme_void()
+  theme_void() +
+  theme(legend.position='none')
 
 #this initializes the interactive bit
 girafe(ggobj = map1) %>%
   girafe_options(opts_hover(css = "fill:blue;"))
+
 ```
 
-## geospatial work beginnings - experimenting with what works and what doesn't
-Advanced data visualization (e.g., interactive visualization)
+# Map figure 2
 ```{r}
-#a more replicable way to download the data - make sure you have a "data" folder in your "ds_finalproject" folder
-dataFile <- here("data", "states.zip")
-dataFolder <- here("data")
-download.file("https://www2.census.gov/geo/tiger/GENZ2017/shp/cb_2017_us_state_500k.zip", destfile = dataFile)
-unzip(dataFile, exdir = dataFolder)
+map_US_Interactive2 <- map_US_inc %>%
+  select(name, median_inc, predicted_inc, mean_coi, mean_he, mean_ed)
 
-#loading in census states shape file
-#we don't use this shape file anywhere yet 
-geoCensusStates <- st_read("data/cb_2017_us_state_500k.shp") %>%
-  clean_names()
-
-#setting the CRS
-# censusStateShaFile <- geoCensusStates %>%
-#   select(geoid, geometry) %>%
-#   st_set_crs(value = 4326)
-
-#combining the Census shapefile witht he median household income by state
-#HERE WE'LL NEED TO HAVE CREATED A A DATAFRAME WITH THE MEDIAN INCOME AND PREDICTED MEDIAN INCOME FOR EACH STATE
-#censusGeoData <- st_join(censusStateShaFile, , join = st_intersects)
-
-#setting the crs and creating the geometry variable
-# censusStateShaFile <- geoCensusStates %>%
-#   st_as_sf(coords = c("longitude", "latitude"), na.fail = FALSE) %>%
-#   st_set_crs(value = 4326)
-
-#Map idea 1 - this may allow for more changes down the line
-geoCensusStates %>% 
-  ggplot() +
-  geom_sf() +
-  coord_sf(crs = 5070, datum = NA) +
-  theme_map()
-
-#map idea 2
-library(maps)
-us_states <- map_data("state")
-head(us_states)
-
-p <- ggplot(data = us_states,
-            mapping = aes(x = long, y = lat,
-                          group = group))
-
-p + geom_polygon(fill = "white", color = "black") +
-  theme_map()
+library(mapview)
+map_US_Interactive2 %>%
+  mapview(zcol = "median_inc", 
+          map.types = c("CartoDB.Voyager","Esri.NatGeoWorldMap","Esri.WorldPhysical"))
 
 ```
+
 
 ## Census API Query Method 2 (via a url query) to pull median income and some basic mapping exploration
 ##I'll use this to create the unsupervised ml model so no deletions necessary yet 
