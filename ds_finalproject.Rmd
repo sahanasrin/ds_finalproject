@@ -1028,8 +1028,8 @@ collect_metrics(lm_cv, summarize = FALSE) %>%
   ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
   geom_line() +
   geom_point() +
-  geom_label(hjust = .1, nudge_y = -.02) +
-  scale_y_continuous(limits = c(0, .3)) +
+  geom_label(nudge_y = -500) +
+  scale_y_continuous(limits = c(10000, 17500)) +
   labs(title = "Median Income: Linear Regression Model (RMSE Across 10 Folds)", 
        y = "Predicted RMSE",
        x = "Fold Number") +
@@ -1084,8 +1084,8 @@ collect_metrics(knn_res, summarize = FALSE) %>%
   ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
   geom_line() +
   geom_point() +
-  geom_label(hjust = .1, nudge_y = -.02) +
-  scale_y_continuous(limits = c(0, .3)) +
+  geom_label(nudge_y = -500) +
+  scale_y_continuous(limits = c(10000, 17500)) +
   labs(title = "Median Income: KNN Model (RMSE Across 10 Folds)", 
        y = "Predicted RMSE",
        x = "Fold Number") +
