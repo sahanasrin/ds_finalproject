@@ -36,9 +36,11 @@ library(here)
 library(mapview)
 library(ggthemes)
 library(tigris)
-#library(albersusa)
+library(albersusa)
 library(ggiraph)
 library(srvyr)
+library(Hmisc)
+
 ```
 
 #Census API Query Method 1 and Column Name Clean-Up
@@ -76,7 +78,7 @@ states_2017 <- get_acs(
 
 ```
 
-#Read in Childhood Opportunity Dataset and Join Census Data with New Dataset
+#Read in Childhood Opportunity Index Dataset and Join Census Data with New Dataset
 ```{r}
 #reading in childhood opportunity data 
 child_opp_data1 <- read_csv("data/index.csv")
@@ -92,6 +94,7 @@ child_opp_data2 <- child_opp_data1 %>%
 #joining the census and COI data
 states_2017 <- left_join(states_2017, child_opp_data2, by= "GEOID")
 ```
+Learn more about the dataset [here](https://www.diversitydatakids.org/child-opportunity-index)
 
 ##Cleaning the states_2017 joined dataset
 ```{r - cleaning data}
@@ -100,7 +103,7 @@ states_2017 <- states_2017 %>%
   rename(geoid = GEOID,
          name = NAME)
 
-#drop the E estimate columns
+#drop the E in the estimate columns
 for ( col in 1:ncol(states_2017)){
     colnames(states_2017)[col] <-  sub("E.*", "", colnames(states_2017)[col])
 }
@@ -113,28 +116,52 @@ states_2017 <-states_2017 %>%
 #removing all NAs
 states_2017 <- na.omit(states_2017)
 
-#making all variables log
+#turning all 0's to 1's for the log
+states_2017[states_2017 == 0] <- 1
+
+#creating the relative frequencies for all variables 
 states_2017 <- states_2017 %>%
-  mutate(
-    log_total_pop = log(total_pop),
-    log_travel_min_work_agg = log(travel_min_work_agg),
-    log_female_count = log(female_count),
-    log_computer_count = log(computer_count),
-    log_education_alloc = log(education_alloc),
-    log_med_income = log(med_income),
-    log_hs_count = log(hs_count),
-    log_ged_count = log(ged_count),
-    log_assoc_count = log(assoc_count),
-    log_bach_count = log(bach_count)
-    )
+    mutate(
+      travel_min_work_agg_prop = travel_min_work_agg/total_pop,
+      female_count_prop = female_count/total_pop,
+      computer_count_prop = computer_count/total_pop,
+      hs_count_prop = hs_count/total_pop,
+      ged_count_prop = ged_count/total_pop,
+      assoc_count_prop = assoc_count/total_pop,
+      bach_count_prop = bach_count/total_pop,
+      education_alloc_prop = education_alloc/total_pop)
 
-#only using the numbers for the recipe
+#here's the dataframe we'll use for the model
 only_numb <- states_2017 %>%
-  select(starts_with("log_"), starts_with("z"))
+  select(med_income, total_pop, ends_with("prop"), starts_with("z"))
 
+#it looks like we should center some variables, but not log everything
+#we need to log GED, and med_income
+hist.data.frame(only_numb)
+
+# #making all variables log
+# states_2017 <- states_2017 %>%
+#   mutate(
+#     log_total_pop = log(total_pop),
+#     log_travel_min_work_agg = log(travel_min_work_agg),
+#     log_female_count = log(female_count),
+#     log_computer_count = log(computer_count),
+#     log_education_alloc = log(education_alloc),
+#     log_med_income = log(med_income),
+#     log_hs_count = log(hs_count),
+#     log_ged_count = log(ged_count),
+#     log_assoc_count = log(assoc_count),
+#     log_bach_count = log(bach_count)
+#     )
+# #only using the numbers for the recipe
+# only_numb <- states_2017 %>%
+#   select(starts_with("log_"), starts_with("z"))
 #removing inf
-only_numb <- only_numb %>%
-  filter_all(all_vars(!is.infinite(.)))
+# only_numb <- only_numb %>%
+#   filter_all(all_vars(!is.infinite(.)))
+
+
+
 ```
 
 #Sahana EDA (Some visualizations that tell the story in a slightly clearer way) 
@@ -921,10 +948,21 @@ states_2017_test <- testing(states_2017_split)
 folds <- vfold_cv(data = states_2017_train, v = 10)
 
 #crafting recipe
-states_2017_rec <- recipe(log_med_income ~ ., data = states_2017_train) %>%
+states_2017_rec <- recipe(med_income ~ ., data = states_2017_train) %>%
   step_naomit(all_predictors()) %>%
   step_nzv(all_predictors()) %>%
-  step_filter_missing(all_predictors()) 
+  step_filter_missing(all_predictors()) %>%
+  step_log(all_outcomes(),skip = T) %>%
+  step_center(all_predictors(), -starts_with("z_")) 
+
+
+%>%
+  prep()
+temp <- bake(states_2017_rec, new_data = NULL)
+
+
+hist.data.frame(temp)
+
 
 ```
 
@@ -1104,7 +1142,7 @@ predictions_testing <- bind_cols(states_2017_test,
 predictions_testing
 
 #rmse for test data
-rmse(data = predictions_testing, truth = states_2017_test$log_med_income, estimate = .pred)
+rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate = .pred)
 
 
 ```
