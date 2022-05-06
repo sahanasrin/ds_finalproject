@@ -170,12 +170,8 @@ states_2017 <- states_2017 %>%
 # hist.data.frame(only_numb)
 # dev.off()
 
-#![EDA for all variables]("/ds_finalproject/images/greatestFigure.png")
-knitr::include_graphics("office_square.jpeg")
-
-# eda_figure <- "/ds_finalproject/images/greatestFigure.png"
-# eda <- readPNG(eda_figure, native = TRUE, info = TRUE)
-# eda
+eda_variables <- knitr::include_graphics("/Users/sahanasrin/Desktop/IMG_6164.jpeg")
+eda_variables
 ```
 ![EDA for all variables]("/ds_finalproject/images/greatestFigure.png")
 
