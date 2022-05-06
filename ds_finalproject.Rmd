@@ -39,7 +39,8 @@ library(tigris)
 library(albersusa)
 library(ggiraph)
 library(srvyr)
-library(Hmisc)
+#library(Hmisc)
+
 
 ```
 
@@ -98,10 +99,32 @@ Learn more about the dataset [here](https://www.diversitydatakids.org/child-oppo
 
 ##Cleaning the states_2017 joined dataset
 ```{r - cleaning data}
+
+#this function will help us get the state from each census tract 
+stateName  <- function(input) {
+  tractCountyState <- unlist(strsplit(input, ", "))
+  stateName <- tractCountyState[3]
+  
+  return(stateName)
+}
+
+#we're iterating through the states_2017 "names" column and using the function
+#above to pull the state names
+stateList <- map(.x = states_2017$NAME, .f = ~stateName(.x))
+#we're converting the format to a tibble so we can add it to states_2017
+stateTibble <- as.tibble(unlist(stateList))
+
+#adding a state column to our census states_2017 datababy
+states_2017 <- bind_cols(
+  states_2017,
+  stateTibble
+)
+
 #Renaming geoid and name columns 
 states_2017 <- states_2017 %>%
   rename(geoid = GEOID,
-         name = NAME)
+         name = NAME,
+         state_name = value)
 
 #drop the E in the estimate columns
 for ( col in 1:ncol(states_2017)){
@@ -131,13 +154,9 @@ states_2017 <- states_2017 %>%
       bach_count_prop = bach_count/total_pop,
       education_alloc_prop = education_alloc/total_pop)
 
-#here's the dataframe we'll use for the model
-only_numb <- states_2017 %>%
-  select(med_income, total_pop, ends_with("prop"), starts_with("z"))
-
 #it looks like we should center some variables, but not log everything
 #we need to log GED, and med_income
-hist.data.frame(only_numb)
+#hist.data.frame(only_numb)
 
 # #making all variables log
 # states_2017 <- states_2017 %>%
@@ -940,9 +959,13 @@ states_2017 %>%
 #Set up a testing environment
 #set the seed and split the data
 set.seed(20211101)
-states_2017_split <- initial_split(only_numb, prop = .8)
-states_2017_train <- training(states_2017_split)
+states_2017_split <- initial_split(states_2017, prop = .8)
+states_2017_train1 <- training(states_2017_split)
 states_2017_test <- testing(states_2017_split)
+
+#here's the dataframe we'll use for the model
+states_2017_train <- states_2017_train1 %>%
+  select(med_income, total_pop, ends_with("prop"), starts_with("z"))
 
 #resampling with 10 folds
 folds <- vfold_cv(data = states_2017_train, v = 10)
@@ -952,17 +975,15 @@ states_2017_rec <- recipe(med_income ~ ., data = states_2017_train) %>%
   step_naomit(all_predictors()) %>%
   step_nzv(all_predictors()) %>%
   step_filter_missing(all_predictors()) %>%
-  step_log(all_outcomes(),skip = T) %>%
+  step_log(ged_count_prop) %>%
   step_center(all_predictors(), -starts_with("z_")) 
 
-
-%>%
-  prep()
-temp <- bake(states_2017_rec, new_data = NULL)
-
-
-hist.data.frame(temp)
-
+# %>%
+#   prep()
+# temp <- bake(states_2017_rec, new_data = NULL)
+# 
+# 
+# hist.data.frame(temp)
 
 ```
 
@@ -1112,24 +1133,16 @@ rf_final_fit <- fit(rf_final, only_numb)
 rf_fit_rs <- rf_final %>%
   fit_resamples(resamples = folds)
 
-#RMSE looks consistent across folds
-collect_metrics(rf_fit_rs, summarize = FALSE) %>%
-  filter(.metric == "rmse") %>%
-  ggplot(mapping = aes(x = id, y = .estimate, group = .estimator, label = round(.estimate, digits = 2))) +
-  geom_line() +
-  geom_point() +
-  geom_label(hjust = .1, nudge_y = -.02) +
-  scale_y_continuous(limits = c(0, .3)) +
-  labs(title = "Median Income: Random Forest Model (RMSE Across 10 Folds)", 
-       y = "Predicted RMSE",
-       x = "Fold Number") +
-  theme_minimal()
-
 #mean RMSE across the 10 samples
 collect_metrics(rf_fit_rs) %>%
   filter(.metric == "rmse") %>%
   select(mean) %>%
   pull(mean)
+
+rf_last_fit %>%
+  extract_fit_parsnip() %>%
+  vip(num_features = 10)
+
 
 ```
 
@@ -1149,6 +1162,7 @@ rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate =
 
 ## geospatial/advanced data viz
 ```{r}
+
 #load in income data from census - we won't need this once we finalize the earlier sections
 map_inc <- tidycensus::get_acs(
   geography = "state", 
