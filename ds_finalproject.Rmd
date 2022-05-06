@@ -44,7 +44,7 @@ library(srvyr)
 
 ##The question that lies at the heart of our analysis is: Using a small number of continuous variables, how accurately can our specified model predict median household income in United States Census Tracts? We believe this question to be critical in helping define salient predictors of the amount of wealth households in America are capable of accumulating. As of February 2022 per the Center of Poverty and Social Policy in Columbia University, poverty rates in the US were around 14.4%, with the expiration of Child Tax Credit (CTC) payments hastening the increase in childhood poverty rates. Thus, we believe that our question poses important implications to both short-term concerns related to the quality of life of American families as well as long-term indicators of economic growth and progress in the country at large. And, perhaps if certain unapparent variables demonstrate to have some level of predictive power over the outcome of median household income, digestable changes can be made in the lives of everyday Americans with serve to improve their lives.
 
-##To put this question to test, we adopt a combination of supervised and unsupervised machine learning methods, as well as various Exploratory Data Analysis, API Queries, and Geospatial tools to guide our data collection and decisionmaking processes. The datasets we invoke for our analysis are the American Community Survey collected from the years of 2013-2017 reflecting data on all Census Tracts in all 50 states, as well as the Childhood Opportunity Index Dataset, which gives insight on the neigborhood conditions (ie., access to recereational services andclean natural resources) of children in all census tracts. 
+##To put this question to test, we adopt a combination of supervised and unsupervised machine learning methods, as well as various Exploratory Data Analysis, API Queries, and Geospatial tools to guide our data collection and decisionmaking processes. Git and its version control capabilities were also crucial to our ability to work effectively in tandem as a group.The datasets we invoke for our analysis are the American Community Survey collected from the years of 2013-2017 reflecting data on all Census Tracts in all 50 states, as well as the Childhood Opportunity Index Dataset, which gives insight on the neigborhood conditions (ie., access to recereational services andclean natural resources) of children in all census tracts. 
 
 
 #Census API Query Method 1 and Column Name Clean-Up
@@ -187,43 +187,46 @@ states_2017 <- states_2017 %>%
 ```
 
 #Exploratory Data Analysis Phase 1: Understanding How Key Variables of Interest Interplay
-#The goal of this initial EDA is to understand the distribution of American households across income brackets specified by the [FILL IN THE BLANK], as well as gain insight into features that characterize these income brackets. 
+#The goal of this initial EDA is to understand the distribution of American households across income brackets specified by the US News World Report linked below, as well as gain insight into features that characterize these income brackets. 
 
-#The first vizualization titled "Number of People in the United States in Specified Income Brackets" shows us that the lower-median income bracket is the largest, with the median-upper income bracket following behind. In terms of a specific number of census tracts in each bracket, 
+#The first vizualization titled "Number of People in the United States Living in Tracts with Specified Income Brackets" shows us that the number of people living in a middle class census tract is the highest, with the lower middle class bracket following behind. Bearing in mind that this does not give insight into the actual number of people in each of these brackets, it tells us that the majority of Americans are occupying what can be known as "middle-class America." In terms of a specific number of census tracts in each bracket, [FILL IN THIS AFTER YOU FIX THE CODE]
 
 #The final vizualization titled "" demonstrates that average aggregated travel time for members in tracts, taken as a proportion of the total individuals in the given tract, is highest for those in the median-upper income level. 
 ```{r EDA}
-#finding number of people in different income brackets
+#finding number of people in different census tract income brackets
 states_2017_EDA <- states_2017 %>% 
   mutate(
     income_bracket = case_when(
-    med_income <= 25161 ~ "Lower", 
-    med_income <= 78624 ~ "Lower-Median", 
-    med_income <= 186151 ~ "Median-Upper", 
+    med_income <= 32058 ~ "Poor-Near Poor",
+    med_income <= 53413 ~ "Lower-Middle Class", 
+    med_income <= 156000 ~ "Middle Class", 
     TRUE ~ "Upper") 
   )
 
+#creating a barplot depicting distribution of people across income brackets
 states_2017_EDA %>%
   ggplot(mapping = aes(x = income_bracket, y = total_pop)) + 
   geom_col() +
-  labs (
+  labs(
     title = "Number of People in the United States in Specified Income Brackets", 
-    subtitle = "Employment Figures From April 2021", 
+    subtitle = "Information on the Relative Sizes of Income Brackets", 
     x = "Income Bracket", 
     y = "Number of People", 
-    caption = ""
+    caption = "ACS 5 Year Survey and Childhood Index Opportunity Scores"
   )
 
 #finding proportion of census tracts in specified income bracket 
 # states_2017_EDA %>% 
-#   mutate(lower_income = if_else(income_bracket == "Lower", 1, 0)) %>% #gen dummy variable 
-#   mutate(lower_median_income =if_else(income_bracket == "Lower-Median", 1, 0)) %>%
-#   mutate(median_upper_income = if_else(income_bracket == "Median-Upper",1, 0)) %>%
+#   mutate(poor = if_else(income_bracket == "Poor-Near Poor", 1, 0)) %>% #gen dummy variable 
+#   mutate(lower_middle =if_else(income_bracket == "Lower-Middle Class", 1, 0)) %>% 
+#   mutate(middle = if_else(income_bracket == "Middle Class",1, 0)) %>%
+#   mutate(upper = if_else (income_bracket == "Upper", 1, 0))
 #   summarize(
-#     lower_income = sum(lower_income == 1), 
-#     lower_median_income = sum(lower_median_income == 1), 
-#     median_upper_income = sum(median_upper_income == 1)  
-#     )
+#   poor == sum(poor == 1), 
+#   lower-middle == sum(lower_middle == 1), 
+#   middle == sum(middle == 1), 
+#   upper == sum(upper == 1)
+#  )
 
 #group by income bracket - find number of computers per category 
 #lower level of computers among lower income - this bracket is underrepresented in the data comparatively speaking
@@ -242,6 +245,7 @@ travel_time_viz
 #girafe(ggobj1 = computers_viz) %>%
   #girafe_options(opts_hover(css = "fill:blue;"))
 ```
+#https://money.usnews.com/money/personal-finance/family-finance/articles/where-do-i-fall-in-the-american-economic-class-system
 
 #Exploratory Data Analysis Phase 2: Understanding Variable Importance
 
@@ -249,8 +253,8 @@ travel_time_viz
 #EDA for all states
 
 #Means of variables for all states
-means = colMeans(states_2017[,c(variable_list)])
-barplot(means[order(means,decreasing=T)])
+#means = colMeans(states_2017[,c(variable_list)])
+#barplot(means[order(means,decreasing=T)])
 
 #Data Visualization for Each Variable -------------------
 #med_income
@@ -961,7 +965,8 @@ states_2017 %>%
 
 ```
 
-## splitting the data, creating folds, and creating a recipe (that will need to get updated depending on variables used)
+##Preparing for Supervised Machine Learning Models
+#Now, our aim is to run various supervised machine learning models in order to gauge the efficacy of our specified predictors in determining median household income levels. In order to do so, we rely upon v-fold cross validation techniques and a recipe that is carefully crafted to match the needs and limitations of our data. 
 ```{r - Splitting and folding and creating a recipe}
 #Set up a testing environment
 #set the seed and split the data
@@ -994,7 +999,8 @@ states_2017_rec <- recipe(med_income ~ ., data = states_2017_train) %>%
 
 ```
 
-## linear regression model *infrastructure*
+##Linear Regression Model 
+##We begin with a linear regression model. Our RMSE from this model is reasonably high at around 13,370, which given the range of our median household income level data from 7232 to 250001, is not extremely high but certainly higher than we would like to observe. This means that the error in the model in predicting our data is by 13,370 dollars, which is not necessarily indicative of the type of predictive robustness we would like to observe.In this model, the variable z_coi_nat appears to have the highest level of importance, with computer_count_prop falling closely behind. 
 ```{r - linear regression model}
 #setting the linear reg model
 lm_mod <- linear_reg() %>%
@@ -1045,6 +1051,7 @@ lm_fit %>%
   extract_fit_parsnip() %>%
   vip(num_features = 10)
 
+summary(states_2017$med_income)
 ```
 
 ## K nearest neighbors model
@@ -1167,8 +1174,6 @@ rmse(data = predictions_testing, truth = states_2017_test$med_income, estimate =
 
 ```
 
-
-
 # Map figure 1
 ```{r}
 #recruiting the testing data for the map figure
@@ -1230,35 +1235,35 @@ map_US_Interactive2 %>%
 ## Census API Query Method 2 (via a url query) to pull median income and some basic mapping exploration
 ##I'll use this to create the unsupervised ml model so no deletions necessary yet 
 ```{r}
-#use census API Query to get data on median household income levels in 50 states
-#i'm not really using this anywhere yet 
-#DON'T DELTE 
-url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B06011_001E&for=state:*")
-popurl <- GET(url = url)
-http_status(popurl)
-popurl <- content(popurl, as = "text")
-pop_matrix <- fromJSON(popurl)
-#turn body of character matrix into a tibble
-us_50_states <- as_tibble(pop_matrix[2:nrow(pop_matrix),],.name_repair = "minimal")
-#add variable names to the tibble
-names(us_50_states) <- us_50_states[1,]
-
-us_map <- tidycensus::get_acs(
-  geography = "state", 
-  variables = c(total_pop = "B01003_001", 
-                med_income = "B19013_001"), 
-  output = "wide", 
-  state = states, 
-  geometry = TRUE, 
-  year = 2017) 
-
-plot(us_map["med_incomeE"])
-       
-#plot(ca_example_map["med_incomeE"])
-
-#this is an interactive map
-library(mapview)
-mapview(us_map, zcol = "med_incomeE")
+# #use census API Query to get data on median household income levels in 50 states
+# #i'm not really using this anywhere yet 
+# #DON'T DELTE 
+# url <- str_glue("https://api.census.gov/data/2017/acs/acs5?get=NAME,B06011_001E&for=state:*")
+# popurl <- GET(url = url)
+# http_status(popurl)
+# popurl <- content(popurl, as = "text")
+# pop_matrix <- fromJSON(popurl)
+# #turn body of character matrix into a tibble
+# us_50_states <- as_tibble(pop_matrix[2:nrow(pop_matrix),],.name_repair = "minimal")
+# #add variable names to the tibble
+# names(us_50_states) <- us_50_states[1,]
+# 
+# us_map <- tidycensus::get_acs(
+#   geography = "state", 
+#   variables = c(total_pop = "B01003_001", 
+#                 med_income = "B19013_001"), 
+#   output = "wide", 
+#   state = states, 
+#   geometry = TRUE, 
+#   year = 2017) 
+# 
+# plot(us_map["med_incomeE"])
+#        
+# #plot(ca_example_map["med_incomeE"])
+# 
+# #this is an interactive map
+# library(mapview)
+# mapview(us_map, zcol = "med_incomeE")
 ```
 
 #Unsupervised Machine Learning Models 
