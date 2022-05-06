@@ -102,7 +102,7 @@ child_opp_data2 <- child_opp_data1 %>%
 #joining the census and COI data
 states_2017 <- left_join(states_2017, child_opp_data2, by= "GEOID")
 ```
-Learn more about the dataset [here](https://www.diversitydatakids.org/child-opportunity-index)
+The [COI](https://www.diversitydatakids.org/child-opportunity-index) aggregates multiple factors related to strong child development, such as child education (e.g., distance from early child education centers) and health (e.g., air quality and access to greenspace).
 
 ##Cleaning the states_2017 joined dataset
 ```{r - cleaning data}
@@ -160,11 +160,15 @@ states_2017 <- states_2017 %>%
       bach_count_prop = bach_count/total_pop,
       education_alloc_prop = education_alloc/total_pop)
 
-#KEEP THIS IN FOR NOW
-#library(Hmisc)
+#here's the dataframe we'll use for the model
+# only_numb <- states_2017 %>%
+#   select(med_income, total_pop, ends_with("prop"), starts_with("z"))
+# library(Hmisc)
+# tiff("test.tiff", units="in", width=5, height=5, res=300)
 #it looks like we should center some variables, but not log everything
-#we need to log GED, and med_income
-#hist.data.frame(only_numb)
+#we need to log GED
+# hist.data.frame(only_numb)
+# dev.off()
 
 #![EDA for all variables]("/ds_finalproject/images/greatestFigure.png")
 
@@ -390,10 +394,14 @@ folds <- vfold_cv(data = states_2017_train, v = 10)
 
 #crafting recipe
 states_2017_rec <- recipe(med_income ~ ., data = states_2017_train) %>%
+  #removes rows with nans
   step_naomit(all_predictors()) %>%
+  #removes variables that are sparce and unbalanced
   step_nzv(all_predictors()) %>%
   step_filter_missing(all_predictors()) %>%
+  #logs ged since it's skewed
   step_log(ged_count_prop) %>%
+  #centers our variables but not the z-scored ones
   step_center(all_predictors(), -starts_with("z_")) 
 
 # %>%
@@ -406,7 +414,7 @@ states_2017_rec <- recipe(med_income ~ ., data = states_2017_train) %>%
 ```
 
 ##Linear Regression Model 
-##We begin with a linear regression model. Our RMSE from this model is reasonably high at around 13,370, which given the range of our median household income level data from 7232 to 250001, is not extremely high but certainly higher than we would like to observe. This means that the error in the model in predicting our data is by 13,370 dollars, which is not necessarily indicative of the type of predictive robustness we would like to observe.In this model, the variable z_coi_nat appears to have the highest level of importance, with computer_count_prop falling closely behind. 
+##We begin with a linear regression model. Our RMSE from this model is reasonably high at around 13,370, which given the range of our median household income level data from 7232 to 250001, is not extremely high but certainly higher than we would like to observe. This means that the error in the model in predicting our data is by 13,370 dollars, which is not necessarily indicative of the type of predictive robustness we would like to observe.In this model, the variable z_coi_nat appears to have the highest level of importance, with computer_count_prop falling closely behind.  
 ```{r - linear regression model}
 #setting the linear reg model
 lm_mod <- linear_reg() %>%
@@ -460,7 +468,8 @@ lm_fit %>%
 summary(states_2017$med_income)
 ```
 
-## K nearest neighbors model
+##K nearest neighbors model
+##We follow with a K nearest neighbors model to see if a non-parametric approach will yield a stronger RMSE value. However, our RMSE from this model is higher than the the RMSE yielded from the linear model - at around 13,425. This value is also not ideal.
 ```{r - Exercise 02: knn model}
 knn_mod <- nearest_neighbor(neighbors = 5) %>%
   set_engine(engine = "kknn") %>%
@@ -512,7 +521,8 @@ collect_metrics(knn_res) %>%
 
 ```
 
-## Random forest model
+##Random forest model
+##We conclude with a Random forest model. This aproach averages the estimates from many independent trees. Specifically, this model use 1000 trees, applies a tuning grid to use stronger mtry and min_n values, and uses a regression framework. The RMSE yielded this model was lowest, at 11,193 (and 5582.86 when applied to the testing data). Although this model is our strongest, we discuss methods of improvement in the limitations section.
 ```{r - Exercise 02: random forest model}
 treeNumb <- 1000
 gridVal <- 10
@@ -570,7 +580,7 @@ rf_last_fit %>%
 ```{r - prediction for linear regression}
 #making a prediction
 predictions_testing <- bind_cols(states_2017_test,
-    predict(object = lm_fit, new_data = states_2017_test)
+    predict(object = rf_final_fit, new_data = states_2017_test)
   )
 predictions_testing
 
