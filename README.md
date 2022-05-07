@@ -15,5 +15,5 @@ Citations: The following citiations acknowledge outside resources (excluding dat
   1. Huq, S. (2022, March 23). 3.4 Million More Children in Poverty in February 2022 than December 2021. Columbia University Center on Poverty and Social Policy. [https://www.povertycenter.columbia.edu/news-internal/monthly-poverty-february-2022](https://www.povertycenter.columbia.edu/news-internal/monthly-poverty-february-2022)
   2. Snider, S., & Kerr, E. (2021, December 16). Where Do I Fall in the American Economic Class System? U.S. News & World Report. [https://money.usnews.com/money/personal-finance/family-finance/articles/where-do-i-fall-in-the-american-economic-class-system](https://money.usnews.com/money/personal-finance/family-finance/articles/where-do-i-fall-in-the-american-economic-class-system)
   3. Scatter Plot Matrices - R Base Graphs - Easy Guides - Wiki - STHDA. (n.d.). Statistical Tools for High-Throughput Data Analysis. [http://www.sthda.com/english/wiki/scatter-plot-matrices-r-base-graphs](http://www.sthda.com/english/wiki/scatter-plot-matrices-r-base-graphs)
-  4.
+ 
   
