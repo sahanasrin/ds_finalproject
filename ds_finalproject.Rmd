@@ -514,7 +514,7 @@ collect_metrics(knn_res) %>%
 ##Random forest model
 We conclude with a Random forest model. This aproach averages the estimates from many independent trees. Specifically, this model use 1000 trees, applies a tuning grid to use stronger mtry and min_n values, and uses a regression framework. The RMSE yielded this model was lowest, at 11,193 (and 5582.86 on the testing data). Although this model is our strongest, we discuss methods of improvement in the limitations section.
 ```{r - Exercise 02: random forest model}
-treeNumb <- 10
+treeNumb <- 1000
 gridVal <- 10
 #since random forests can be computationally heavier, we use parallel processing
 cores <- parallel::detectCores()
